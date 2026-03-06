@@ -1,0 +1,3 @@
+@javax.annotation.ParametersAreNonnullByDefault
+@pelemenguin.texturegen.util.annotation.MethodsReturnNonnullByDefault
+package pelemenguin.texturegen.util;
