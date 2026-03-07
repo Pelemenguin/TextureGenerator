@@ -147,7 +147,8 @@ public class TerminalClient {
     private void createNewWorkspace(Scanner scanner) {
         System.out.println("Current directory: " + System.getProperty("user.dir"));
 
-        String workspacePath = new StringInput("Enter the workspace file path:").scan(System.out, scanner);
+        String workspacePath = new StringInput("Enter the workspace file path:\n(Leave empty to exit)").allowEmpty().scan(System.out, scanner);
+        if (workspacePath.isBlank()) return;
         Path currentWorkspacePath;
         try {
             if (!workspacePath.endsWith(".texturegen-workspace.json")) {
@@ -193,7 +194,8 @@ public class TerminalClient {
     }
 
     private void openExistingWorkspace(Scanner scanner) {
-        String workspacePath = new StringInput("Enter the workspace file path:").scan(System.out, scanner);
+        String workspacePath = new StringInput("Enter the workspace file path:\n(Leave empty to exit)").allowEmpty().scan(System.out, scanner);
+        if (workspacePath.isBlank()) return;
         Path currentWorkspacePath;
         try {
             currentWorkspacePath = Path.of(workspacePath);
