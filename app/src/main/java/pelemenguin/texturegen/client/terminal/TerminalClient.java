@@ -21,6 +21,7 @@ public class TerminalClient {
 
     public void run(TextureGeneratorClient client) {
         INSTANCE.client = client;
+        ANSIHelper.clear(System.out);
 
         try (Scanner scanner = new Scanner(System.in)) {
             new TerminalMenu("""

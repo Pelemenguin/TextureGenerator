@@ -57,7 +57,7 @@ public class MaterialListMenu {
                     if (file.isDirectory()) {
                         this.loop(scanner, file);
                     } else {
-                        // TODO: Implement this
+                        GeneratorInfoMenu.loop(scanner, file);
                     }
                 });
             }
