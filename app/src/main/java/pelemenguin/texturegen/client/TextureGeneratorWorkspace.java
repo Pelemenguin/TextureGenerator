@@ -26,6 +26,8 @@ public class TextureGeneratorWorkspace {
     public Path inPath;
     @SerializedName("out_path")
     public Path outPath;
+    @SerializedName("generators_path")
+    public Path generatorsPath = Path.of("./materials");
 
     public static TextureGeneratorWorkspace openFromFile(File file) throws FileNotFoundException, IOException, JsonSyntaxException, JsonIOException {
         try (FileReader reader = new FileReader(file)) {

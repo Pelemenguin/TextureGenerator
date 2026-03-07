@@ -10,8 +10,6 @@ import java.util.Scanner;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-import pelemenguin.texturegen.client.ANSIHelper;
-import pelemenguin.texturegen.client.StringInput;
 import pelemenguin.texturegen.client.TextureGeneratorClient;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
 
@@ -48,11 +46,14 @@ public class TerminalClient {
                 .addKey('E', "Exit", () -> {})
                 .addKey('I', "", () -> this.selectInPath(scanner))
                 .addKey('O', "", () -> this.selectOutPath(scanner))
+                .addKey('S', "", () -> this.selectGeneratorsPath(scanner))
+                .addKey('M', "Open texture generators folder", () -> this.enterMaterialListLoop(scanner))
                 .addKey('R', "Refresh", () -> {}) // Doing nothing will refresh the menu and thus update the descriptions.
                 .autoUppercase();
         while (true) {
             menu.updateKeyDescription('I', "Input assets folder. Current: " + (client.workspace.inPath == null ? ANSIHelper.red("NULL! Select one now.") : ANSIHelper.blue(client.workspace.inPath.toString())));
             menu.updateKeyDescription('O', "Output folder. Current: " + (client.workspace.outPath == null ? ANSIHelper.red("NULL! Select one now.") : ANSIHelper.blue(client.workspace.outPath.toString())));
+            menu.updateKeyDescription('S', "Set the root folder of texture generators. Current: " + ANSIHelper.blue(client.workspace.generatorsPath.toString()));
             char input = menu.scan(System.out, scanner);
             if (input == 'e' || input == 'E') {
                 break;
@@ -61,7 +62,7 @@ public class TerminalClient {
     }
 
     private void selectInPath(Scanner scanner) {
-        String inPathStr = new StringInput("Enter the input assets folder path:").allowEmpty().scan(System.out, scanner);
+        String inPathStr = new StringInput("Enter the input assets folder path:\n(Leave empty to cancel)").allowEmpty().scan(System.out, scanner);
         if (inPathStr.isBlank()) return;
         try {
             Path inPath = Path.of(inPathStr);
@@ -86,7 +87,7 @@ public class TerminalClient {
     }
 
     private void selectOutPath(Scanner scanner) {
-        String outPathStr = new StringInput("Enter the output folder path:").allowEmpty().scan(System.out, scanner);
+        String outPathStr = new StringInput("Enter the output folder path:\n(Leave empty to cancel)").allowEmpty().scan(System.out, scanner);
         if (outPathStr.isBlank()) return;
         try {
             Path outputPath = Path.of(outPathStr);
@@ -107,6 +108,39 @@ public class TerminalClient {
             System.out.println("Error saving workspace file. Please try again.");
             selectOutPath(scanner);
             return;
+        }
+    }
+
+    private void selectGeneratorsPath(Scanner scanner) {
+        String generatorsPathStr = new StringInput("Enter the root folder of texture generators:\n(Leave empty to cancel)").allowEmpty().scan(System.out, scanner);
+        if (generatorsPathStr.isBlank()) return;
+        try {
+            Path generatorsPath = Path.of(generatorsPathStr);
+            client.workspace.generatorsPath = generatorsPath;
+            client.workspace.saveToFile(client.currentWorkspaceFile);
+        } catch (InvalidPathException e) {
+            System.out.println("Invalid path. Please try again.");
+            selectGeneratorsPath(scanner);
+            return;
+        } catch (UnsupportedOperationException e) {
+            System.out.println("Path is not associated with the default provider.");
+            return;
+        } catch (JsonIOException e) {
+            System.out.println("Error saving workspace file. Please try again.");
+            selectGeneratorsPath(scanner);
+            return;
+        } catch (IOException e) {
+            System.out.println("Error saving workspace file. Please try again.");
+            selectGeneratorsPath(scanner);
+            return;
+        }
+    }
+
+    private void enterMaterialListLoop(Scanner scanner) {
+        try {
+            MaterialListMenu.loop(this.client.workspace, scanner, this.client.workspace.generatorsPath.toFile());
+        } catch (UnsupportedOperationException e) {
+            // Ignore
         }
     }
 

@@ -1,4 +1,4 @@
-package pelemenguin.texturegen.client;
+package pelemenguin.texturegen.client.terminal;
 
 import java.io.PrintStream;
 

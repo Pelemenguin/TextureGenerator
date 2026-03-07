@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
-import pelemenguin.texturegen.client.ANSIHelper;
-
 class TerminalMenu {
 
     private String description;
@@ -79,6 +77,12 @@ class TerminalMenu {
 
     public TerminalMenu autoUppercase() {
         this.autoUppercase = true;
+        return this;
+    }
+
+    public TerminalMenu clearKeys() {
+        this.descriptions.clear();
+        this.actions.clear();
         return this;
     }
 

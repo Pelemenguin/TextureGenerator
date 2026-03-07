@@ -1,4 +1,4 @@
-package pelemenguin.texturegen.client;
+package pelemenguin.texturegen.client.terminal;
 
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -26,7 +26,7 @@ public class StringInput {
             String line = scanner.nextLine();
             if (!allowEmpty && line.isBlank()) {
                 out.println(ANSIHelper.red("Input cannot be empty. Please try again."));
-                out.print("\n> ");
+                out.print(ANSIHelper.magenta("\n> "));
                 continue;
             }
             ANSIHelper.clear(out);
