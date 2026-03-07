@@ -23,8 +23,11 @@ dependencies {
 
     // This dependency is used by the application.
     implementation libs.guava
+}
 
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+dependencies {
+    // GSON
+    implementation 'com.google.code.gson:gson:2.13.2'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -37,6 +40,11 @@ java {
 application {
     // Define the main class for the application.
     mainClass = 'pelemenguin.texturegen.client.TextureGeneratorClient'
+}
+
+run {
+    workingDir = file('run')
+    standardInput = System.in
 }
 
 tasks.named('test') {

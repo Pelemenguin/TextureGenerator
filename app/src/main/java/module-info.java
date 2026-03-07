@@ -1,8 +1,6 @@
 module pelemenguin.texturegen {
     requires java.base;
-    requires jsr305;
+    requires com.google.gson;
 
     exports pelemenguin.texturegen.client;
-    exports pelemenguin.texturegen.util;
-    exports pelemenguin.texturegen.util.annotation;
 }
