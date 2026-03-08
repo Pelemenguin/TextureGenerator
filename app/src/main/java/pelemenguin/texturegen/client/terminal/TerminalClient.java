@@ -10,6 +10,7 @@ import java.util.Scanner;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import pelemenguin.texturegen.client.CommandArgs;
 import pelemenguin.texturegen.client.TextureGeneratorClient;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
 
@@ -19,20 +20,33 @@ public class TerminalClient {
 
     TextureGeneratorClient client;
 
-    public void run(TextureGeneratorClient client) {
+    public void run(TextureGeneratorClient client, CommandArgs args) {
         INSTANCE.client = client;
         ANSIHelper.clear(System.out);
 
         try (Scanner scanner = new Scanner(System.in)) {
-            new TerminalMenu("""
+            if (args.workspace == null) {
+                new TerminalMenu("""
 
-                    Welcome to Texture Generator terminal!
-                    Let's select a workspace!
-                    """.stripIndent())
-                .addKey('0', "Exit", () -> System.exit(0))
-                .addKey('1', "Create a new workspace", () -> this.createNewWorkspace(scanner))
-                .addKey('2', "Open an existing workspace", () -> openExistingWorkspace(scanner))
-                .scan(System.out, scanner);
+                        Welcome to Texture Generator terminal!
+                        Let's select a workspace!
+                        """.stripIndent())
+                    .addKey('0', "Exit", () -> System.exit(0))
+                    .addKey('1', "Create a new workspace", () -> this.createNewWorkspace(scanner))
+                    .addKey('2', "Open an existing workspace", () -> openExistingWorkspace(scanner))
+                    .scan(System.out, scanner);
+            } else {
+                try {
+                    client.currentWorkspaceFile = args.workspace;
+                    client.workspace = TextureGeneratorWorkspace.openFromFile(args.workspace);
+                } catch (FileNotFoundException e) {
+                    System.out.println("Workspace file not found: " + client.workspace);
+                    System.exit(1);
+                } catch (IOException e) {
+                    System.out.println("Failed to open workspace: " + e.getMessage());
+                    System.exit(1);
+                }
+            }
 
             if (client.workspace == null) return;
 

@@ -17,7 +17,7 @@ public class TextureGeneratorClient {
             ANSIHelper.disableANSI();
         }
 
-        TerminalClient.INSTANCE.run(new TextureGeneratorClient());
+        TerminalClient.INSTANCE.run(new TextureGeneratorClient(), commandArgs);
     }
 
 }

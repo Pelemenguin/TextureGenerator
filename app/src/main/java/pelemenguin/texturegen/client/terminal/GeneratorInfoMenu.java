@@ -34,6 +34,7 @@ public class GeneratorInfoMenu {
             })
             .addKey('S', "Suffix", () -> {
                 String result =  new StringInput("Enter suffix: (leave empty to caccel)")
+                    .allowEmpty()
                     .scan(System.out, scanner);
                 if (!result.isBlank()) {
                     this.info.suffix = result;
