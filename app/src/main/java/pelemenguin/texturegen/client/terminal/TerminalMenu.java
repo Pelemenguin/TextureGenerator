@@ -68,6 +68,7 @@ class TerminalMenu {
                 action.run();
                 return firstChar;
             } else {
+                out.println(ANSIHelper.red("Invalid input: " + firstChar));
                 return scan(out, scanner);
             }
         }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Scanner;
 
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
+import pelemenguin.texturegen.client.CommandArgs;
 
 public class GeneratorInfoMenu {
 
@@ -28,13 +29,22 @@ public class GeneratorInfoMenu {
     public void loop(Scanner scanner) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase()
-            .addKey('B', "Back", () -> {})
+            .addKey('B', "Save and back", () -> {})
             .addKey('R', "Run texture generation", () -> {
                 // TODO: Implement this
+            })
+            .addKey('S', "Suffix", () -> {
+                String result =  new StringInput("Enter suffix: (leave empty to caccel)")
+                    .scan(System.out, scanner);
+                if (!result.isBlank()) {
+                    this.info.suffix = result;
+                }
             });
         while (true) {
             System.out.println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
-            char result = menu.scan(System.out, scanner);
+            char result = menu
+                .updateKeyDescription('S', "Suffix: " + (this.info.suffix == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(this.info.suffix)))
+                .scan(System.out, scanner);
             if (result == 'B') {
                 break;
             }
