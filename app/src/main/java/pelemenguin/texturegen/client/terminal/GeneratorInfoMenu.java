@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Scanner;
 
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
-import pelemenguin.texturegen.client.CommandArgs;
 
 public class GeneratorInfoMenu {
 

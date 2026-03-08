@@ -19,6 +19,8 @@ public class GeneratorInfo {
 
     public String suffix;
     public String[] fallbacks = new String[0];
+    // TODO: Remove `transient`
+    public transient Processor[] processors = new Processor[0];
 
     public static GeneratorInfo openFromFile(File file) throws FileNotFoundException, IOException, JsonIOException, JsonSyntaxException {
         try (FileReader reader = new FileReader(file)) {
