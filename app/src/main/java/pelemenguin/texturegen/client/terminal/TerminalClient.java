@@ -62,6 +62,7 @@ public class TerminalClient {
                 .addKey('I', "", () -> this.selectInPath(scanner))
                 .addKey('O', "", () -> this.selectOutPath(scanner))
                 .addKey('S', "", () -> this.selectGeneratorsPath(scanner))
+                .addKey('T', "Read texture infos from input assets folder", this::readTextureInfos)
                 .addKey('M', "Open texture generators folder", () -> this.enterMaterialListLoop(scanner))
                 .addKey('R', "Refresh", () -> {}) // Doing nothing will refresh the menu and thus update the descriptions.
                 .autoUppercase();
@@ -74,6 +75,17 @@ public class TerminalClient {
                 break;
             }
         }
+    }
+
+    private void readTextureInfos() {
+        try {
+            this.client.workspace.readTextureInfos();
+            this.client.workspace.saveToFile(this.client.currentWorkspaceFile);
+        } catch (Throwable t) {
+            System.out.println("Failed to read texture infos: " + ANSIHelper.red(t.getMessage()));
+            return;
+        }
+        System.out.println(ANSIHelper.green("Successfully read texture infos from input assets folder!"));
     }
 
     private void selectInPath(Scanner scanner) {
