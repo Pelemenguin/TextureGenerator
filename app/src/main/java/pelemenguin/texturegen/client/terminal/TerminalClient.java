@@ -63,6 +63,7 @@ public class TerminalClient {
                 .addKey('O', "", () -> this.selectOutPath(scanner))
                 .addKey('S', "", () -> this.selectGeneratorsPath(scanner))
                 .addKey('T', "Read texture infos from input assets folder", this::readTextureInfos)
+                .addKey('U', "Edit texture infos", () -> this.enterTextureInfosEditingLoop(scanner))
                 .addKey('M', "Open texture generators folder", () -> this.enterMaterialListLoop(scanner))
                 .addKey('R', "Refresh", () -> {}) // Doing nothing will refresh the menu and thus update the descriptions.
                 .autoUppercase();
@@ -75,6 +76,13 @@ public class TerminalClient {
                 break;
             }
         }
+    }
+
+    private void enterTextureInfosEditingLoop(Scanner scanner) {
+        // TODO: Implement editor
+        new ListEditorMenu<>(this.client.workspace.textures, (e) -> {})
+            .strigifier(t -> t.getPath().toString())
+            .loop(scanner);
     }
 
     private void readTextureInfos() {

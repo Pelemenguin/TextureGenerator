@@ -16,11 +16,12 @@ public class StringInput {
     }
 
     public String scan(PrintStream out, Scanner scanner) {
+        out.println("==========\n");
         if (this.description != null) {
             out.println(description);
         }
 
-        out.print("\n> ");
+        out.print(ANSIHelper.magenta("\n> "));
 
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();

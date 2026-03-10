@@ -32,7 +32,7 @@ public class TextureGeneratorWorkspace {
     public Path outPath;
     @SerializedName("generators_path")
     public Path generatorsPath = Path.of("./materials");
-    private ArrayList<TextureInfo> textures = new ArrayList<>();
+    public ArrayList<TextureInfo> textures = new ArrayList<>();
 
     public List<TextureInfo> getTextures() {
         return List.copyOf(textures);

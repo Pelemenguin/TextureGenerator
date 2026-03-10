@@ -43,6 +43,7 @@ class TerminalMenu {
     }
 
     public char scan(PrintStream out, Scanner scanner) {
+        out.println("==========\n");
         if (this.description != null) {
             out.println(description);
         }
