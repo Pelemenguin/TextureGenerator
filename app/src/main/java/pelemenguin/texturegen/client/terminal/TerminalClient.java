@@ -5,11 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Set;
 
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import pelemenguin.texturegen.api.generator.TextureInfo;
 import pelemenguin.texturegen.client.CommandArgs;
 import pelemenguin.texturegen.client.TextureGeneratorClient;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
@@ -42,7 +45,7 @@ public class TerminalClient {
                 } catch (FileNotFoundException e) {
                     System.out.println("Workspace file not found: " + client.workspace);
                     System.exit(1);
-                } catch (IOException e) {
+                } catch (Throwable e) {
                     System.out.println("Failed to open workspace: " + e.getMessage());
                     System.exit(1);
                 }
@@ -62,7 +65,6 @@ public class TerminalClient {
                 .addKey('I', "", () -> this.selectInPath(scanner))
                 .addKey('O', "", () -> this.selectOutPath(scanner))
                 .addKey('S', "", () -> this.selectGeneratorsPath(scanner))
-                .addKey('T', "Read texture infos from input assets folder", this::readTextureInfos)
                 .addKey('U', "Edit texture infos", () -> this.enterTextureInfosEditingLoop(scanner))
                 .addKey('M', "Open texture generators folder", () -> this.enterMaterialListLoop(scanner))
                 .addKey('R', "Refresh", () -> {}) // Doing nothing will refresh the menu and thus update the descriptions.
@@ -79,13 +81,61 @@ public class TerminalClient {
     }
 
     private void enterTextureInfosEditingLoop(Scanner scanner) {
+        try {
+            this.client.workspace.reloadFromFile(this.client.currentWorkspaceFile);
+        } catch (Throwable t) {
+            System.out.println("Failed to reload workspace file, using cached texture info list: " + ANSIHelper.red(t.getMessage()));
+        }
         // TODO: Implement editor
-        new ListEditorMenu<>(this.client.workspace.textures, (e) -> {})
-            .strigifier(t -> t.getPath().toString())
-            .loop(scanner);
+        new ListEditorMenu<>(this.client.workspace.textures, (info, infoSetter) -> {
+            new FieldEditorMenu<>(info)
+                .<Path>specify("path", 'P', "Texture path", (value, setter) -> {
+                    String newPathStr = new StringInput("Enter the texture path:\n(Leave empty to cancel)").allowEmpty().scan(System.out, scanner);
+                    if (newPathStr.isBlank()) {
+                        return;
+                    }
+                    setter.accept(Path.of(newPathStr));
+                })
+                .specify("allowAnimated", 'A', "Allow animated")
+                .specify("skipVariant", 'S', "Skip variant")
+                .<Set<String>>specify("types", 'T', "Texture types", (value, setter) -> {
+                    ArrayList<String> list = new ArrayList<>(value);
+                    new ListEditorMenu<>(list, (original, stringSetter) -> {
+                        String newString = new StringInput("Enter the texture type:\n(Leave empty to cancel)")
+                            .allowEmpty()
+                            .scan(System.out, scanner);
+                        if (newString.isBlank()) {
+                            return;
+                        }
+                        stringSetter.accept(newString);
+                    }, () -> "[EMPTY]").loop(System.out, scanner);
+                    value.clear();
+                    value.addAll(list);
+                })
+                .loop(System.out, scanner);
+            infoSetter.accept(info);
+        }, TextureInfo::new)
+            .strigifier(t -> t.getPath() == null ? "[NULL]" : t.getPath().toString())
+            .extraKeys(menu -> {
+                menu.addKey('R', "Read texture infos from input assets folder", () -> this.readTextureInfos(scanner));
+            })
+            .loop(System.out, scanner);
+        try {
+            this.client.workspace.saveToFile(this.client.currentWorkspaceFile);
+        } catch (IOException e) {
+            System.out.println("Failed to save workspace file: " + e.getMessage());
+        }
     }
 
-    private void readTextureInfos() {
+    private void readTextureInfos(Scanner scanner) {
+        char c = new TerminalMenu("Sure to read texture infos from files? This will " + ANSIHelper.red("overwrite") + " the current texture info list in the workspace file!")
+            .addKey('Y', "Yes, read them.", () -> {})
+            .addKey('N', "No, cancel.", () -> {})
+            .autoUppercase()
+            .scan(System.out, scanner);
+        if (c != 'Y') {
+            return;
+        }
         try {
             this.client.workspace.readTextureInfos();
             this.client.workspace.saveToFile(this.client.currentWorkspaceFile);

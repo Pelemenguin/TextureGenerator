@@ -44,6 +44,16 @@ public class TextureGeneratorWorkspace {
         }
     }
 
+    public void reloadFromFile(File file) throws FileNotFoundException, IOException, JsonSyntaxException, JsonIOException {
+        try (FileReader reader = new FileReader(file)) {
+            TextureGeneratorWorkspace loaded = GSON.fromJson(reader, TextureGeneratorWorkspace.class);
+            this.inPath = loaded.inPath;
+            this.outPath = loaded.outPath;
+            this.generatorsPath = loaded.generatorsPath;
+            this.textures = new ArrayList<>(loaded.textures);
+        }
+    }
+
     public void saveToFile(File file) throws IOException, JsonIOException {
         try (FileWriter writer = new FileWriter(file)) {
             GSON.toJson(this, writer);
