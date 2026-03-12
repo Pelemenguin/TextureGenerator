@@ -1,6 +1,10 @@
 package pelemenguin.texturegen.api.generator;
 
-public record GenerationContext(
+import java.nio.file.Path;
 
+public record GenerationContext(
+    Path rawPath,
+    Path suffixedPath,
+    String fallbackUsed
 ) {
 }

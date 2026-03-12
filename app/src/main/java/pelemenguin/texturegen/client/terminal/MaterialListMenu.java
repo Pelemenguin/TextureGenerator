@@ -11,7 +11,7 @@ public class MaterialListMenu {
     private static final MaterialListMenu INSTANCE = new MaterialListMenu();
 
     static void loop(TextureGeneratorWorkspace workspace, Scanner scanner, File folder) {
-        INSTANCE.loop(scanner, folder);
+        INSTANCE._loop(workspace, scanner, folder);
     }
 
     private static File[] listFile(File folder) {
@@ -29,7 +29,7 @@ public class MaterialListMenu {
     }
 
     private int page = 0;
-    private void loop(Scanner scanner, File folder) {
+    private void _loop(TextureGeneratorWorkspace workspace, Scanner scanner, File folder) {
         if (!folder.exists()) {
             try {
                 folder.mkdirs();
@@ -55,9 +55,9 @@ public class MaterialListMenu {
                 File file = files[index];
                 menu.addKey((char) ('0' + i), file.getName() + (file.isDirectory() ? ANSIHelper.cyan(" [FOLDER]") : ""), () -> {
                     if (file.isDirectory()) {
-                        this.loop(scanner, file);
+                        this._loop(workspace, scanner, file);
                     } else {
-                        GeneratorInfoMenu.loop(scanner, file);
+                        GeneratorInfoMenu.loop(workspace, scanner, file);
                     }
                 });
             }

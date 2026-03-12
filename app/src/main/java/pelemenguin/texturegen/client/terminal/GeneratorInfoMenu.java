@@ -1,18 +1,24 @@
 package pelemenguin.texturegen.client.terminal;
 
 import java.io.File;
+import java.io.PrintStream;
+import java.util.List;
 import java.util.Scanner;
 
+import pelemenguin.texturegen.api.generator.GenerationExecutor;
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
+import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
 
 public class GeneratorInfoMenu {
 
     public static final GeneratorInfoMenu INSTANCE = new GeneratorInfoMenu();
 
+    private TextureGeneratorWorkspace workspace;
     private File file;
     private GeneratorInfo info;
 
-    public static void loop(Scanner scanner, File file) {
+    public static void loop(TextureGeneratorWorkspace workspace, Scanner scanner, File file) {
+        INSTANCE.workspace = workspace;
         INSTANCE.file = file;
         try {
             INSTANCE.info = GeneratorInfo.openFromFile(file);
@@ -25,22 +31,49 @@ public class GeneratorInfoMenu {
         INSTANCE.loop(scanner);
     }
 
+    private List<GenerationExecutor.GenerationError> lastExceptions;
     public void loop(Scanner scanner) {
         TerminalMenu menu = new TerminalMenu()
-            .autoUppercase()
-            .addKey('B', "Save and back", () -> {})
-            .addKey('R', "Run texture generation", () -> {
-                // TODO: Implement this
-            })
-            .addKey('S', "Suffix", () -> {
-                String result =  new StringInput("Enter suffix: (leave empty to caccel)")
-                    .allowEmpty()
-                    .scan(System.out, scanner);
-                if (!result.isBlank()) {
-                    this.info.suffix = result;
-                }
-            });
+            .autoUppercase();
         while (true) {
+            menu.addKey('B', "Save and back", () -> {})
+                .addKey('R', "Run texture generation", () -> {
+                    GenerationExecutor.ExecutionResult result = GenerationExecutor.run(this.workspace.inPath, this.workspace.outPath, this.workspace.textures, this.info, System.out);
+
+                    if (!result.exceptions().isEmpty()) {
+                        this.lastExceptions = result.exceptions();
+                    } else {
+                        this.lastExceptions = null;
+                    }
+                })
+                .addKey('S', "Suffix", () -> {
+                    String result =  new StringInput("Enter suffix: (leave empty to caccel)")
+                        .allowEmpty()
+                        .scan(System.out, scanner);
+                    if (!result.isBlank()) {
+                        this.info.suffix = result;
+                    }
+                });
+
+            if (this.lastExceptions != null) {
+                menu.addKey('E', "Dump exceptions (" + this.lastExceptions.size() + ")", () -> {
+                    try {
+                        File outFile = this.workspace.outPath.resolve("exceptions.txt").toFile();
+
+                        try (PrintStream stream = new PrintStream(outFile)) {
+                            stream.println("Exceptions during generation:\n\n");
+                            for (GenerationExecutor.GenerationError e : this.lastExceptions) {
+                                e.printStackTrace(stream);
+                                stream.println();
+                            }
+                        }
+                    } catch (Throwable t) {
+                        System.out.println("Failed to dump exceptions: " + ANSIHelper.red(t.getMessage()));
+                        return;
+                    }
+                });
+            }
+
             System.out.println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
             char result = menu
                 .updateKeyDescription('S', "Suffix: " + (this.info.suffix == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(this.info.suffix)))

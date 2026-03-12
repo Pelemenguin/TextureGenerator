@@ -5,6 +5,10 @@ import java.io.PrintStream;
 public class ANSIHelper {
     private static boolean enableANSI = true;
 
+    public static boolean ansiEnabled() {
+        return enableANSI;
+    }
+
     public static void disableANSI() {
         enableANSI = false;
     }
@@ -45,6 +49,48 @@ public class ANSIHelper {
             return;
         }
         out.print("\033[H\033[2J");
+        out.flush();
+    }
+
+    public static void clearLine(PrintStream out) {
+        if (!enableANSI) {
+            out.println();
+            return;
+        }
+        out.print("\033[2K");
+        out.flush();
+    }
+
+    public static void cr(PrintStream out) {
+        if (!enableANSI) {
+            out.println();
+            return;
+        }
+        out.print("\r");
+        out.flush();
+    }
+
+    public static void moveUp(int lines, PrintStream out) {
+        if (!enableANSI) {
+            return;
+        }
+        out.print("\033[" + lines + "A");
+        out.flush();
+    }
+
+    public static void moveDown(int lines, PrintStream out) {
+        if (!enableANSI) {
+            return;
+        }
+        out.print("\033[" + lines + "B");
+        out.flush();
+    }
+
+    public static void moveTo(int x, int y, PrintStream out) {
+        if (!enableANSI) {
+            return;
+        }
+        out.print("\033[" + y + ";" + x + "H");
         out.flush();
     }
 }

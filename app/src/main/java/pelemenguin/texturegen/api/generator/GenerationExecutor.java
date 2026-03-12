@@ -1,13 +1,150 @@
 package pelemenguin.texturegen.api.generator;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
+import pelemenguin.texturegen.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.client.terminal.TerminalProgressReporter;
+
 public class GenerationExecutor {
 
-    public static BufferedImage run(BufferedImage image, GenerationContext context, List<Processor> processors) throws IllegalArgumentException, IllegalStateException {
+    public static record ExecutionResult(
+        int totalImages,
+        int successfulImages,
+        int failedImages,
+        int unfoundImages,
+        List<GenerationError> exceptions
+    ) {}
+
+    public static ExecutionResult run(Path assetsFolder, Path outputFolder, List<TextureInfo> textureInfos, GeneratorInfo generatorInfo) {
+        return run(assetsFolder, outputFolder, textureInfos, generatorInfo, null);
+    }
+
+    public static ExecutionResult run(Path assetsFolder, Path outputFolder, List<TextureInfo> textureInfos, GeneratorInfo generatorInfo, PrintStream out) {
+        String[] fallbacks = generatorInfo.fallbacks;
+        Processor[] processors = generatorInfo.processors;
+        String resultSuffix = generatorInfo.suffix;
+
+        int totalImages = textureInfos.size();
+        int successfulImages = 0;
+        int failedImages = 0;
+        int unfoundImages = 0;
+        List<GenerationError> exceptions = new ArrayList<>();
+
+        TerminalProgressReporter reporter = null;
+        if (out != null && ANSIHelper.ansiEnabled()) {
+            ANSIHelper.clear(out);
+            reporter = new TerminalProgressReporter();
+            reporter.registerCategory("Succeeded", i -> ANSIHelper.green(String.valueOf(i)), '#');
+            reporter.registerCategory("Failed", i -> ANSIHelper.red(String.valueOf(i)), '!');
+            reporter.registerCategory("Unfound", i -> ANSIHelper.yellow(String.valueOf(i)), '?');
+            reporter.updateTotal(totalImages);
+
+            reporter.loop(out);
+        }
+        for (TextureInfo textureInfo : textureInfos) {
+            Path path = textureInfo.path;
+
+            Path fallbackPath = null;
+            String fallbackUsed = null;
+            BufferedImage image = null;
+            for (String fallback : fallbacks) {
+                fallbackPath = assetsFolder.resolve(path.resolveSibling(path.getFileName().toString().replaceFirst("(\\.\\w+)$", "_" + fallback + "$1")));
+                try {
+                    File currentFile = fallbackPath.toFile();
+                    if (currentFile.exists()) {
+                        image = ImageIO.read(currentFile);
+                        fallbackUsed = fallback;
+                        break;
+                    }
+                } catch (Exception e) {
+                    exceptions.add(new GenerationError(textureInfo, e));
+                }
+            }
+            if (image == null) {
+                try {
+                    File currentFile = assetsFolder.resolve(path).toFile();
+                    if (currentFile.exists()) {
+                        image = ImageIO.read(currentFile);
+                        fallbackUsed = null;
+                        fallbackPath = path;
+                    }
+                } catch (Exception e) {
+                    exceptions.add(new GenerationError(textureInfo, e));
+                }
+            }
+
+            if (image == null) {
+                exceptions.add(new GenerationError(textureInfo, new FileNotFoundException("Could not find texture at " + path + " or any of the fallbacks")));
+                unfoundImages ++;
+                continue;
+            }
+
+            GenerationContext context = new GenerationContext(
+                path,
+                fallbackPath,
+                fallbackUsed
+            );
+
+            try {
+                BufferedImage result = runSingle(image, context, List.of(processors));
+                Path resultPath = outputFolder.resolve(path.resolveSibling(
+                    path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
+                ));
+                File resultFile = resultPath.toFile();
+
+                if (!resultFile.exists()) {
+                    File parentFile = resultFile.getParentFile();
+                    if (!parentFile.exists()) {
+                        parentFile.mkdirs();
+                    }
+                    resultFile.createNewFile();
+                }
+
+                ImageIO.write(result, "png", resultFile);
+            } catch (Exception e) {
+                exceptions.add(new GenerationError(textureInfo, e));
+                failedImages ++;
+            }
+
+            // Report status
+            if (out != null && ANSIHelper.ansiEnabled()) {
+                reporter.update("Succeeded", successfulImages);
+                reporter.update("Failed", failedImages);
+                reporter.update("Unfound", unfoundImages);
+            }
+
+            successfulImages ++;
+        }
+
+        reporter.shutdown();
+
+        if (out != null && ANSIHelper.ansiEnabled()) {
+            ANSIHelper.clear(out);
+            out.println(ANSIHelper.blue("Processing complete!"));
+            out.println("Succeeded | " + ANSIHelper.green(String.valueOf(successfulImages)));
+            out.println("Failed    | " + ANSIHelper.red(String.valueOf(failedImages)));
+            out.println("Unfound   | " + ANSIHelper.yellow(String.valueOf(unfoundImages)));
+        }
+
+        return new ExecutionResult(
+            totalImages,
+            successfulImages,
+            failedImages,
+            unfoundImages,
+            exceptions
+        );
+    }
+
+    public static BufferedImage runSingle(BufferedImage image, GenerationContext context, List<Processor> processors) throws IllegalArgumentException, IllegalStateException {
         ArrayDeque<List<?>> stack = new ArrayDeque<>();
         ArrayDeque<Class<?>> types = new ArrayDeque<>();
 
@@ -109,6 +246,13 @@ public class GenerationExecutor {
         }
         private void updateData(int index, Object data) {
             this.data[index] = data;
+        }
+    }
+
+    public static record GenerationError(TextureInfo textureInfo, Exception exception) {
+        public void printStackTrace(PrintStream out) {
+            out.println("Generating: " + textureInfo);
+            this.exception.printStackTrace(out);
         }
     }
 
