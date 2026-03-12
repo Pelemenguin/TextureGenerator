@@ -121,6 +121,7 @@ public class GenerationExecutor {
                 } catch (Exception e) {
                     exceptions.add(new GenerationError(textureInfo, e));
                     reporter.increase("Failed");
+                    return;
                 }
 
                 reporter.increase("Succeeded");
@@ -187,30 +188,38 @@ public class GenerationExecutor {
 
             // Push output types
             for (Class<?> outputType : outputTypes) {
-                stack.add(new ArrayList<>());
                 types.add(outputType);
             }
         }
 
         // Iterate processors and process
+        processorLoop:
         for (Processor processor : processors) {
             List<Class<?>> inputTypes = processor.getInputTypes();
             List<Class<?>> outputTypes = processor.getOutputTypes();
 
-            // Run with parameters iter through each Cartesian product of argument lists
             Parameter parameter = new Parameter(new Object[inputTypes.size()]);
             List<?>[] inputLists = new List[inputTypes.size()];
-            for (int i = inputLists.length - 1; i > 0; i--) {
+            for (int i = inputLists.length - 1; i >= 0; i--) {
                 inputLists[i] = stack.pop();
             }
             // Implement loop equivalent to Cartesian product inline
             int[] indices = new int[inputLists.length];
             for (List<?> list : inputLists) {
                 if (list.isEmpty()) {
-                    continue;
+                    // Push empty lists
+                    for (int i = 0; i < outputTypes.size(); i++) {
+                        stack.add(List.of());
+                        types.add(outputTypes.get(i));
+                    }
+                    continue processorLoop;
                 }
             }
             Result result = new Result(outputTypes.toArray(new Class[0]));
+            // Init parameter
+            for (int i = 0; i < inputLists.length; i++) {
+                parameter.updateData(i, inputLists[i].get(0));
+            }
             while (true) {
                 processor.process(context, parameter, result);
                 int pos = indices.length - 1;

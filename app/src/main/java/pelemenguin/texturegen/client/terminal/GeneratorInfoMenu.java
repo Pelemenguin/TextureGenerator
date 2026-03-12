@@ -61,11 +61,12 @@ public class GeneratorInfoMenu {
                         File outFile = this.workspace.outPath.resolve("exceptions.txt").toFile();
 
                         try (PrintStream stream = new PrintStream(outFile)) {
-                            stream.println("Exceptions during generation:\n\n");
+                            stream.println("Exceptions during generation:\n");
                             for (GenerationExecutor.GenerationError e : this.lastExceptions) {
                                 e.printStackTrace(stream);
                                 stream.println();
                             }
+                            System.out.println("Dumped exceptions to: " + ANSIHelper.blue(outFile.toString()));
                         }
                     } catch (Throwable t) {
                         System.out.println("Failed to dump exceptions: " + ANSIHelper.red(t.getMessage()));

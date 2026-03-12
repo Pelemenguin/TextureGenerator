@@ -11,6 +11,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import pelemenguin.texturegen.api.builtin.EveryPointProvider;
+import pelemenguin.texturegen.api.builtin.ImageRecolorer;
+
 public class GeneratorInfo {
 
     public static final Gson GSON = new GsonBuilder()
@@ -19,8 +22,11 @@ public class GeneratorInfo {
 
     public String suffix;
     public String[] fallbacks = new String[0];
-    // TODO: Remove `transient`
-    public transient Processor[] processors = new Processor[0];
+    // TODO: Remove this test
+    // public Processor[] processors = new Processor[0];
+    public transient Processor[] processors = new Processor[] {
+        new ImageRecolorer()
+    };
 
     public static GeneratorInfo openFromFile(File file) throws FileNotFoundException, IOException, JsonIOException, JsonSyntaxException {
         try (FileReader reader = new FileReader(file)) {
