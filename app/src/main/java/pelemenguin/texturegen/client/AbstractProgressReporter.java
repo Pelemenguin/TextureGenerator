@@ -9,6 +9,12 @@ public abstract class AbstractProgressReporter {
 
     public abstract void update(String category, int newValue);
     public abstract void updateTotal(int newValue);
+    public abstract void increase(String category, int delta);
+    public void increase(String category) {
+        this.increase(category, 1);
+    }
+
+    public abstract int getData(String category);
 
     public abstract void loop();
     public abstract void shutdown();

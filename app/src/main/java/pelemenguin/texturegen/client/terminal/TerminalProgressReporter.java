@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
 import pelemenguin.texturegen.client.AbstractProgressReporter;
@@ -15,7 +16,7 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
     private HashMap<String, UnaryOperator<String>> formatters = new HashMap<>();
     private HashMap<String, Character> characters = new HashMap<>(); // This should only be modified before loop
 
-    private ConcurrentHashMap<String, Integer> data = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, AtomicInteger> data = new ConcurrentHashMap<>();
 
     private int maxCategoryLength = 0;
     private volatile int total = 0;
@@ -45,7 +46,11 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
 
     @Override
     public void update(String category, int newValue) {
-        this.data.put(category, newValue);
+        if (this.data.get(category) == null) {
+            this.data.put(category, new AtomicInteger(newValue));
+        } else {
+            this.data.get(category).set(newValue);
+        }
     }
 
     @Override
@@ -53,10 +58,30 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
         this.total = newValue;
     }
 
+    @Override
+    public void increase(String category, int delta) {
+        if (this.data.get(category) == null) {
+            this.data.put(category, new AtomicInteger(delta));
+        } else {
+            this.data.get(category).addAndGet(delta);
+        }
+    }
+
     private ScheduledExecutorService executor;
     @Override
     public void loop() {
         this.loop(System.out);
+    }
+
+    @Override
+    public int getData(String category) {
+        AtomicInteger integer = this.data.get(category);
+        if (integer == null) {
+            this.data.put(category, new AtomicInteger(0));
+            return 0;
+        } else {
+            return integer.get();
+        }
     }
 
     public void loop(PrintStream out) {
@@ -70,7 +95,7 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
             ANSIHelper.moveTo(0, 0, out);
             int completedValue = 0;
             for (String category : this.characters.keySet()) {
-                int value = this.data.getOrDefault(category, 0);
+                int value =this.getData(category);
                 completedValue += value;
                 String formattedValue = this.formatters.get(category).apply(String.valueOf(value));
                 out.println(String.format("%-" + maxCategoryLength + "s | %s", category, formattedValue));
@@ -85,7 +110,7 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
                 int width = 50;
                 int taken = 0;
                 for (String category : this.characters.keySet()) {
-                    int lengthForThisCategory = (int) Math.round((this.data.getOrDefault(category, 0) / (double) total) * width);
+                    int lengthForThisCategory = (int) Math.round((this.getData(category) / (double) total) * width);
                     taken += lengthForThisCategory;
                     String repr = String.valueOf(this.characters.get(category)).repeat(lengthForThisCategory);
                     content.append(this.formatters.get(category).apply(repr));
@@ -99,9 +124,6 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
 
     @Override
     public void shutdown() {
-        if (this.executor == null) {
-            throw new IllegalStateException("Progress reporter loop not started");
-        }
         this.executor.shutdown();
         ANSIHelper.moveTo(0, 0, System.out);
         ANSIHelper.clear(System.out);

@@ -7,7 +7,11 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
@@ -33,13 +37,11 @@ public class GenerationExecutor {
         Processor[] processors = generatorInfo.processors;
         String resultSuffix = generatorInfo.suffix;
 
-        int totalImages = textureInfos.size();
-        int successfulImages = 0;
-        int failedImages = 0;
-        int unfoundImages = 0;
-        List<GenerationError> exceptions = new ArrayList<>();
+        List<GenerationError> exceptions = Collections.synchronizedList(new ArrayList<>());
 
-        TerminalProgressReporter reporter = null;
+        int totalImages = textureInfos.size();
+
+        final TerminalProgressReporter reporter;
         if (out != null && ANSIHelper.ansiEnabled()) {
             ANSIHelper.clear(out);
             reporter = new TerminalProgressReporter();
@@ -49,83 +51,95 @@ public class GenerationExecutor {
             reporter.updateTotal(totalImages);
 
             reporter.loop(out);
+        } else {
+            reporter = null;
         }
+
+        ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
+
         for (TextureInfo textureInfo : textureInfos) {
-            Path path = textureInfo.path;
+            service.submit(() -> {
+                Path path = textureInfo.path;
 
-            Path fallbackPath = null;
-            String fallbackUsed = null;
-            BufferedImage image = null;
-            for (String fallback : fallbacks) {
-                fallbackPath = assetsFolder.resolve(path.resolveSibling(path.getFileName().toString().replaceFirst("(\\.\\w+)$", "_" + fallback + "$1")));
-                try {
-                    File currentFile = fallbackPath.toFile();
-                    if (currentFile.exists()) {
-                        image = ImageIO.read(currentFile);
-                        fallbackUsed = fallback;
-                        break;
+                Path fallbackPath = null;
+                String fallbackUsed = null;
+                BufferedImage image = null;
+                for (String fallback : fallbacks) {
+                    fallbackPath = assetsFolder.resolve(path.resolveSibling(path.getFileName().toString().replaceFirst("(\\.\\w+)$", "_" + fallback + "$1")));
+                    try {
+                        File currentFile = fallbackPath.toFile();
+                        if (currentFile.exists()) {
+                            image = ImageIO.read(currentFile);
+                            fallbackUsed = fallback;
+                            break;
+                        }
+                    } catch (Exception e) {
+                        exceptions.add(new GenerationError(textureInfo, e));
                     }
+                }
+                if (image == null) {
+                    try {
+                        File currentFile = assetsFolder.resolve(path).toFile();
+                        if (currentFile.exists()) {
+                            image = ImageIO.read(currentFile);
+                            fallbackUsed = null;
+                            fallbackPath = path;
+                        }
+                    } catch (Exception e) {
+                        exceptions.add(new GenerationError(textureInfo, e));
+                    }
+                }
+
+                if (image == null) {
+                    exceptions.add(new GenerationError(textureInfo, new FileNotFoundException("Could not find texture at " + path + " or any of the fallbacks")));
+                    reporter.increase("Unfound");
+                    return;
+                }
+
+                GenerationContext context = new GenerationContext(
+                    path,
+                    fallbackPath,
+                    fallbackUsed
+                );
+
+                try {
+                    BufferedImage result = runSingle(image, context, List.of(processors));
+                    Path resultPath = outputFolder.resolve(path.resolveSibling(
+                        path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
+                    ));
+                    File resultFile = resultPath.toFile();
+
+                    if (!resultFile.exists()) {
+                        File parentFile = resultFile.getParentFile();
+                        if (!parentFile.exists()) {
+                            parentFile.mkdirs();
+                        }
+                        resultFile.createNewFile();
+                    }
+
+                    ImageIO.write(result, "png", resultFile);
                 } catch (Exception e) {
                     exceptions.add(new GenerationError(textureInfo, e));
-                }
-            }
-            if (image == null) {
-                try {
-                    File currentFile = assetsFolder.resolve(path).toFile();
-                    if (currentFile.exists()) {
-                        image = ImageIO.read(currentFile);
-                        fallbackUsed = null;
-                        fallbackPath = path;
-                    }
-                } catch (Exception e) {
-                    exceptions.add(new GenerationError(textureInfo, e));
-                }
-            }
-
-            if (image == null) {
-                exceptions.add(new GenerationError(textureInfo, new FileNotFoundException("Could not find texture at " + path + " or any of the fallbacks")));
-                unfoundImages ++;
-                continue;
-            }
-
-            GenerationContext context = new GenerationContext(
-                path,
-                fallbackPath,
-                fallbackUsed
-            );
-
-            try {
-                BufferedImage result = runSingle(image, context, List.of(processors));
-                Path resultPath = outputFolder.resolve(path.resolveSibling(
-                    path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
-                ));
-                File resultFile = resultPath.toFile();
-
-                if (!resultFile.exists()) {
-                    File parentFile = resultFile.getParentFile();
-                    if (!parentFile.exists()) {
-                        parentFile.mkdirs();
-                    }
-                    resultFile.createNewFile();
+                    reporter.increase("Failed");
                 }
 
-                ImageIO.write(result, "png", resultFile);
-            } catch (Exception e) {
-                exceptions.add(new GenerationError(textureInfo, e));
-                failedImages ++;
-            }
-
-            // Report status
-            if (out != null && ANSIHelper.ansiEnabled()) {
-                reporter.update("Succeeded", successfulImages);
-                reporter.update("Failed", failedImages);
-                reporter.update("Unfound", unfoundImages);
-            }
-
-            successfulImages ++;
+                reporter.increase("Succeeded");
+            });
         }
 
-        reporter.shutdown();
+        try {
+            service.shutdown();
+            service.awaitTermination(1, TimeUnit.HOURS);
+            reporter.shutdown();
+
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        int successfulImages = reporter.getData("Succeeded");
+        int failedImages = reporter.getData("Failed");
+        int unfoundImages = reporter.getData("Unfound");
 
         if (out != null && ANSIHelper.ansiEnabled()) {
             ANSIHelper.clear(out);
