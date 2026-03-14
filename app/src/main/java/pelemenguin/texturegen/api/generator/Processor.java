@@ -7,7 +7,6 @@ public interface Processor {
     public void process(GenerationContext context, GenerationExecutor.Parameter parameters, GenerationExecutor.Result result);
 
     public List<Class<?>> getInputTypes();
-
     public List<Class<?>> getOutputTypes();
 
 }

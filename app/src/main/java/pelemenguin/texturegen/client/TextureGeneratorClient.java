@@ -2,6 +2,7 @@ package pelemenguin.texturegen.client;
 
 import java.io.File;
 
+import pelemenguin.texturegen.api.generator.ProcessorRegistry;
 import pelemenguin.texturegen.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.client.terminal.TerminalClient;
 
@@ -16,6 +17,10 @@ public class TextureGeneratorClient {
         if (commandArgs.disableANSI) {
             ANSIHelper.disableANSI();
         }
+
+        ANSIHelper.clear(System.out);
+
+        ProcessorRegistry.refreshService();
 
         TerminalClient.INSTANCE.run(new TextureGeneratorClient(), commandArgs);
     }

@@ -27,6 +27,8 @@ public class GeneratorInfoMenu {
             }
         } catch (Throwable t) {
             System.out.println("Failed to open generator info: " + ANSIHelper.red(t.getMessage()));
+            t.printStackTrace();
+            return;
         }
         INSTANCE.loop(scanner);
     }

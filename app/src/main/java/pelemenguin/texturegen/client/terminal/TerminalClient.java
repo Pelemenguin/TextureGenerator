@@ -25,7 +25,6 @@ public class TerminalClient {
 
     public void run(TextureGeneratorClient client, CommandArgs args) {
         INSTANCE.client = client;
-        ANSIHelper.clear(System.out);
 
         try (Scanner scanner = new Scanner(System.in)) {
             if (args.workspace == null) {

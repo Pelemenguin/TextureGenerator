@@ -4,9 +4,13 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import pelemenguin.texturegen.api.generator.GenerationContext;
+import pelemenguin.texturegen.api.generator.ProcessorInfo;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
 
+@ProcessorInfo(
+    "texturegen.every_point_provider"
+)
 public class EveryPointProvider implements PointProvider {
 
     @Override
