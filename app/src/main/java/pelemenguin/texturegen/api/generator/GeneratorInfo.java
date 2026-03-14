@@ -21,24 +21,8 @@ public class GeneratorInfo {
         .create();
 
     public String suffix;
-    // TODO: Remove this test
     public String[] fallbacks = new String[0];
     public Processor[] processors = new Processor[0];
-    // public String[] fallbacks = new String[] {
-    //     "metal"
-    // };
-    // public transient Processor[] processors = new Processor[] {
-    //     ImageRecolorer.builder()
-    //         // Use colors below as test
-    //         .putColor(0, 0xFF000000)
-    //         .putColor(63, 0xFF2D5646)
-    //         .putColor(102, 0xFF396E59)
-    //         .putColor(140, 0xFF43897A)
-    //         .putColor(178, 0xFF48966D)
-    //         .putColor(216, 0xFF4FAB90)
-    //         .putColor(255, 0xFF73CEA6)
-    //         .build()
-    // };
 
     public static GeneratorInfo openFromFile(File file) throws FileNotFoundException, IOException, JsonIOException, JsonSyntaxException {
         try (FileReader reader = new FileReader(file)) {

@@ -83,11 +83,6 @@ public class TextureInfo {
     }
 
     public File tryFallbacks(Path assetsRoot, Iterable<String> fallbacks) {
-        // Try fallbacks as suffixes
-        // For example, if last is "example.png" and fallbacks are ["wood", "metal"]
-        // Then return "example_wood.png" if exists, or return "example_metal.png" if exists
-        // If no matched found, return the original path
-        // TODO: Write this into Javadoc
         Iterator<String> fallbackIterator = fallbacks.iterator();
         if (!fallbackIterator.hasNext()) return assetsRoot.resolve(this.path).toFile();
         String last = path.getFileName().toString();

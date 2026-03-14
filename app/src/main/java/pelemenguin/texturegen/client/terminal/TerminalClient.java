@@ -85,7 +85,6 @@ public class TerminalClient {
         } catch (Throwable t) {
             System.out.println("Failed to reload workspace file, using cached texture info list: " + ANSIHelper.red(t.getMessage()));
         }
-        // TODO: Implement editor
         new ListEditorMenu<>(this.client.workspace.textures, (info, infoSetter) -> {
             new FieldEditorMenu<>(info)
                 .<Path>specify("path", 'P', "Texture path", (value, setter) -> {
