@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-import pelemenguin.texturegen.client.terminal.ANSIHelper;
-import pelemenguin.texturegen.client.terminal.TerminalProgressReporter;
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.TerminalProgressReporter;
 
 public class GenerationExecutor {
 

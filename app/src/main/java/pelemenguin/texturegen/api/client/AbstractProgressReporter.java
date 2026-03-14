@@ -1,4 +1,4 @@
-package pelemenguin.texturegen.client;
+package pelemenguin.texturegen.api.client;
 
 import java.util.function.UnaryOperator;
 

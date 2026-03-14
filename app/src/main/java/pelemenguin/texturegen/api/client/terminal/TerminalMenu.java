@@ -1,10 +1,10 @@
-package pelemenguin.texturegen.client.terminal;
+package pelemenguin.texturegen.api.client.terminal;
 
 import java.io.PrintStream;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
-class TerminalMenu {
+public class TerminalMenu {
 
     private String description;
     private LinkedHashMap<String, String> descriptions = new LinkedHashMap<>();

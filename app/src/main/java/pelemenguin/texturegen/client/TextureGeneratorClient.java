@@ -2,8 +2,8 @@ package pelemenguin.texturegen.client;
 
 import java.io.File;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.generator.ProcessorRegistry;
-import pelemenguin.texturegen.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.client.terminal.TerminalClient;
 
 public class TextureGeneratorClient {

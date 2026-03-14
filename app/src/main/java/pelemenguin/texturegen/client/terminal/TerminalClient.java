@@ -12,6 +12,11 @@ import java.util.Set;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.FieldEditorMenu;
+import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
+import pelemenguin.texturegen.api.client.terminal.StringInput;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.generator.TextureInfo;
 import pelemenguin.texturegen.client.CommandArgs;
 import pelemenguin.texturegen.client.TextureGeneratorClient;

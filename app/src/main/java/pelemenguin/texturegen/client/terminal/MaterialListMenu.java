@@ -4,6 +4,9 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Scanner;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.StringInput;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
 
 public class MaterialListMenu {

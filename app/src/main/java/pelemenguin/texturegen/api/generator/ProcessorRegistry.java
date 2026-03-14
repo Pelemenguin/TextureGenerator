@@ -8,7 +8,7 @@ import java.util.ServiceLoader.Provider;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
-import pelemenguin.texturegen.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 
 public class ProcessorRegistry {
     

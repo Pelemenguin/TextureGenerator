@@ -1,4 +1,4 @@
-package pelemenguin.texturegen.client.terminal;
+package pelemenguin.texturegen.api.client.terminal;
 
 import java.io.PrintStream;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
-import pelemenguin.texturegen.client.AbstractProgressReporter;
+import pelemenguin.texturegen.api.client.AbstractProgressReporter;
 
 public class TerminalProgressReporter extends AbstractProgressReporter {
 

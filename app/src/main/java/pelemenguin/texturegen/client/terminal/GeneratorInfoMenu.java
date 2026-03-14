@@ -5,6 +5,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Scanner;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.StringInput;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.generator.GenerationExecutor;
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;

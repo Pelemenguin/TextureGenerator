@@ -3,7 +3,7 @@ package pelemenguin.texturegen.client;
 import java.io.File;
 import java.nio.file.Path;
 
-import pelemenguin.texturegen.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 
 public class CommandArgs {
     
