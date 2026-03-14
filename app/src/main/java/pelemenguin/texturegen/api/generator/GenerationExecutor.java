@@ -1,6 +1,9 @@
 package pelemenguin.texturegen.api.generator;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -63,13 +66,11 @@ public class GenerationExecutor {
 
                 Path fallbackPath = null;
                 String fallbackUsed = null;
-                BufferedImage image = null;
                 for (String fallback : fallbacks) {
                     fallbackPath = assetsFolder.resolve(path.resolveSibling(path.getFileName().toString().replaceFirst("(\\.\\w+)$", "_" + fallback + "$1")));
                     try {
                         File currentFile = fallbackPath.toFile();
                         if (currentFile.exists()) {
-                            image = ImageIO.read(currentFile);
                             fallbackUsed = fallback;
                             break;
                         }
@@ -77,20 +78,21 @@ public class GenerationExecutor {
                         exceptions.add(new GenerationError(textureInfo, e));
                     }
                 }
-                if (image == null) {
+                if (fallbackUsed == null) {
                     try {
                         File currentFile = assetsFolder.resolve(path).toFile();
                         if (currentFile.exists()) {
-                            image = ImageIO.read(currentFile);
-                            fallbackUsed = null;
                             fallbackPath = path;
+                        } else {
+                            fallbackPath = null;
                         }
                     } catch (Exception e) {
                         exceptions.add(new GenerationError(textureInfo, e));
+                        fallbackPath = null;
                     }
                 }
 
-                if (image == null) {
+                if (fallbackPath == null) {
                     exceptions.add(new GenerationError(textureInfo, new FileNotFoundException("Could not find texture at " + path + " or any of the fallbacks")));
                     reporter.increase("Unfound");
                     return;
@@ -103,6 +105,10 @@ public class GenerationExecutor {
                 );
 
                 try {
+                    File imageFile = assetsFolder.resolve(fallbackPath).toFile();
+                    BufferedImage image = ImageIO.read(imageFile);
+                    image = toARGB(image);
+
                     BufferedImage result = runSingle(image, context, List.of(processors));
                     Path resultPath = outputFolder.resolve(path.resolveSibling(
                         path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
@@ -159,7 +165,112 @@ public class GenerationExecutor {
         );
     }
 
+    private static BufferedImage toARGB(BufferedImage image) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+
+        BufferedImage converted = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        switch (image.getType()) {
+            case BufferedImage.TYPE_CUSTOM: {
+                Raster originalData = image.getRaster();
+                Raster alphaData = image.getAlphaRaster();
+                WritableRaster newData = converted.getRaster();
+                int[] pixel = new int[originalData.getNumBands()];
+                int[] result = new int[4];
+                if (pixel.length == 4) {
+                    for (int x = 0; x < width; x++) {
+                        for (int y = 0; y < height; y++) {
+                            originalData.getPixel(x, y, pixel);
+                            result[0] = pixel[0];
+                            result[1] = pixel[1];
+                            result[2] = pixel[2];
+                            result[3] = alphaData == null ? 255 : alphaData.getSample(x, y, 0);
+                            newData.setPixel(x, y, result);
+                        }
+                    }
+                } else {
+                    for (int x = 0; x < width; x++) {
+                        for (int y = 0; y < height; y++) {
+                            originalData.getPixel(x, y, pixel);
+                            int grey = pixel[0];
+                            result[0] = grey;
+                            result[1] = grey;
+                            result[2] = grey;
+                            result[3] = alphaData == null ? 255 : alphaData.getSample(x, y, 0);
+                            newData.setPixel(x, y, result);
+                        }
+                    }
+                }
+                break;
+            }
+            case BufferedImage.TYPE_INT_ARGB, BufferedImage.TYPE_INT_ARGB_PRE: {
+                converted.getGraphics().drawImage(image, 0, 0, null);
+                break;
+            }
+            case BufferedImage.TYPE_4BYTE_ABGR, BufferedImage.TYPE_4BYTE_ABGR_PRE: {
+                WritableRaster originalData = image.getRaster();
+                WritableRaster newData = converted.getRaster();
+                int[] pixel = new int[4];
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        originalData.getPixel(x, y, pixel);
+                        // ABGR to ARGB
+                        int a = pixel[0];
+                        int b = pixel[1];
+                        int g = pixel[2];
+                        int r = pixel[3];
+                        newData.setPixel(x, y, new int[] {r, g, b, a});
+                    }
+                }
+                break;
+            }
+            case BufferedImage.TYPE_BYTE_GRAY: {
+                WritableRaster originalData = image.getRaster();
+                WritableRaster originalAlpha = image.getAlphaRaster();
+                WritableRaster newData = converted.getRaster();
+                int[] newBands = new int[] {0, 0, 0, 0};
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        int grey = originalData.getSample(x, y, 0);
+                        newBands[0] = grey;
+                        newBands[1] = grey;
+                        newBands[2] = grey;
+                        newBands[3] = originalAlpha == null ? 255 : originalAlpha.getSample(x, y, 0);
+                        newData.setPixel(x, y, newBands);
+                    }
+                }
+                break;
+            }
+            case BufferedImage.TYPE_BYTE_INDEXED: {
+                assert image.getColorModel() instanceof IndexColorModel;
+                IndexColorModel colorModel = (IndexColorModel) image.getColorModel();
+
+                WritableRaster originalData = image.getRaster();
+                
+                int[] indices = originalData.getPixels(0, 0, width, height, (int[]) null);
+                int[] newPixels = new int[indices.length * 4];
+                for (int i = 0; i < indices.length; i++) {
+                    int color = colorModel.getRGB(indices[i]);
+                    newPixels[i * 4] = (color >> 16) & 0xFF;
+                    newPixels[i * 4 + 1] = (color >> 8) & 0xFF;
+                    newPixels[i * 4 + 2] = color & 0xFF;
+                    newPixels[i * 4 + 3] = (color >> 24) & 0xFF;
+                }
+                converted.getRaster().setPixels(0, 0, width, height, newPixels);
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unsupported image type: " + image.getType());
+            }
+        }
+
+        return converted;
+    }
+
     public static BufferedImage runSingle(BufferedImage image, GenerationContext context, List<Processor> processors) throws IllegalArgumentException, IllegalStateException {
+        if (processors.isEmpty()) return image;
+
         ArrayDeque<List<?>> stack = new ArrayDeque<>();
         ArrayDeque<Class<?>> types = new ArrayDeque<>();
 
