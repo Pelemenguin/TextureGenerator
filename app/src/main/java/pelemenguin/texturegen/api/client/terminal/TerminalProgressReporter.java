@@ -21,6 +21,16 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
     private int maxCategoryLength = 0;
     private volatile int total = 0;
 
+    private PrintStream out;
+
+    public TerminalProgressReporter(TerminalMenuContext context) {
+        this(context.outStream());
+    }
+
+    public TerminalProgressReporter(PrintStream out) {
+        this.out = out;
+    }
+
     @Override
     public void registerCategory(String category) {
         this.registerCategory(category, s -> s, '#');
@@ -70,7 +80,7 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
     private ScheduledExecutorService executor;
     @Override
     public void loop() {
-        this.loop(System.out);
+        this.loop(this.out);
     }
 
     @Override
@@ -125,8 +135,8 @@ public class TerminalProgressReporter extends AbstractProgressReporter {
     @Override
     public void shutdown() {
         this.executor.shutdown();
-        ANSIHelper.moveTo(0, 0, System.out);
-        ANSIHelper.clear(System.out);
+        ANSIHelper.moveTo(0, 0, this.out);
+        ANSIHelper.clear(this.out);
         this.executor = null;
     }
 

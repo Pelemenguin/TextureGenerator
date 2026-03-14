@@ -3,11 +3,11 @@ package pelemenguin.texturegen.client.terminal;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Scanner;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.generator.GenerationExecutor;
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
 import pelemenguin.texturegen.client.TextureGeneratorWorkspace;
@@ -20,7 +20,7 @@ public class GeneratorInfoMenu {
     private File file;
     private GeneratorInfo info;
 
-    public static void loop(TextureGeneratorWorkspace workspace, Scanner scanner, File file) {
+    public static void loop(TextureGeneratorWorkspace workspace, TerminalMenuContext context, File file) {
         INSTANCE.workspace = workspace;
         INSTANCE.file = file;
         try {
@@ -29,21 +29,21 @@ public class GeneratorInfoMenu {
                 INSTANCE.info = new GeneratorInfo();
             }
         } catch (Throwable t) {
-            System.out.println("Failed to open generator info: " + ANSIHelper.red(t.getMessage()));
+            context.outStream().println("Failed to open generator info: " + ANSIHelper.red(t.getMessage()));
             t.printStackTrace();
             return;
         }
-        INSTANCE.loop(scanner);
+        INSTANCE.loop(context);
     }
 
     private List<GenerationExecutor.GenerationError> lastExceptions;
-    public void loop(Scanner scanner) {
+    public void loop(TerminalMenuContext context) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();
         while (true) {
             menu.addKey('B', "Save and back", () -> {})
                 .addKey('R', "Run texture generation", () -> {
-                    GenerationExecutor.ExecutionResult result = GenerationExecutor.run(this.workspace.inPath, this.workspace.outPath, this.workspace.textures, this.info, System.out);
+                    GenerationExecutor.ExecutionResult result = GenerationExecutor.run(this.workspace.inPath, this.workspace.outPath, this.workspace.textures, this.info, context.outStream());
 
                     if (!result.exceptions().isEmpty()) {
                         this.lastExceptions = result.exceptions();
@@ -54,7 +54,7 @@ public class GeneratorInfoMenu {
                 .addKey('S', "Suffix", () -> {
                     String result =  new StringInput("Enter suffix: (leave empty to caccel)")
                         .allowEmpty()
-                        .scan(System.out, scanner);
+                        .scan(context);
                     if (!result.isBlank()) {
                         this.info.suffix = result;
                     }
@@ -71,19 +71,19 @@ public class GeneratorInfoMenu {
                                 e.printStackTrace(stream);
                                 stream.println();
                             }
-                            System.out.println("Dumped exceptions to: " + ANSIHelper.blue(outFile.toString()));
+                            context.outStream().println("Dumped exceptions to: " + ANSIHelper.blue(outFile.toString()));
                         }
                     } catch (Throwable t) {
-                        System.out.println("Failed to dump exceptions: " + ANSIHelper.red(t.getMessage()));
+                        context.outStream().println("Failed to dump exceptions: " + ANSIHelper.red(t.getMessage()));
                         return;
                     }
                 });
             }
 
-            System.out.println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
+            context.outStream().println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
             char result = menu
                 .updateKeyDescription('S', "Suffix: " + (this.info.suffix == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(this.info.suffix)))
-                .scan(System.out, scanner);
+                .scan(context);
             if (result == 'B') {
                 break;
             }
@@ -93,9 +93,9 @@ public class GeneratorInfoMenu {
         } catch (Throwable t) {
             new TerminalMenu("Failed to save file: " + ANSIHelper.red(t.getMessage()))
                 .autoUppercase()
-                .addKey('R', "Return to editor", () -> this.loop(scanner))
+                .addKey('R', "Return to editor", () -> this.loop(context))
                 .addKey('F', "Force exit " + ANSIHelper.red("without saving"), () -> {})
-                .scan(System.out, scanner);
+                .scan(context);
         }
     }
 

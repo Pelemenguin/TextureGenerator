@@ -15,6 +15,10 @@ public class StringInput {
     public StringInput() {
     }
 
+    public String scan(TerminalMenuContext context) {
+        return this.scan(context.outStream(), context.scanner());
+    }
+
     public String scan(PrintStream out, Scanner scanner) {
         out.println("==========\n");
         if (this.description != null) {

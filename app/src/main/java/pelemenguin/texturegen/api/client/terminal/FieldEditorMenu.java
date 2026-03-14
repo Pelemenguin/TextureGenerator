@@ -65,6 +65,10 @@ public class FieldEditorMenu<T> {
         return this;
     }
 
+    public FieldEditorMenu<T> loop(TerminalMenuContext context) {
+        return this.loop(context.outStream(), context.scanner());
+    }
+
     public FieldEditorMenu<T> loop(PrintStream out, Scanner scanner) {
         while (true) {
             char c = this.getTerminalMenu(out, scanner).scan(out, scanner);

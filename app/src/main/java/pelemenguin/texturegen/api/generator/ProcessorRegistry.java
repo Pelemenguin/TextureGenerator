@@ -13,11 +13,13 @@ import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 public class ProcessorRegistry {
     
     private static HashMap<String, Class<? extends Processor>> registry = new HashMap<>();
+    private static HashMap<Class<? extends Processor>, String> inveredRegistry = new HashMap<>();
     private static HashMap<String, JsonDeserializer<? extends Processor>> deserializerRegistry = new HashMap<>();
     private static HashMap<String, JsonSerializer<? extends Processor>> serializerRegistry = new HashMap<>();
     
     public static void register(String id, Class<? extends Processor> processorClass, JsonSerializer<? extends Processor> serializer, JsonDeserializer<? extends Processor> deserializer) {
         registry.put(id, processorClass);
+        inveredRegistry.put(processorClass, id);
         if (deserializer != null) deserializerRegistry.put(id, deserializer);
         if (serializer != null) serializerRegistry.put(id, serializer);
     }
@@ -38,6 +40,14 @@ public class ProcessorRegistry {
         return registry.get(id);
     }
 
+    public static String getProcessorId(Class<? extends Processor> processorClass) {
+        return inveredRegistry.get(processorClass);
+    }
+
+    public static JsonSerializer<? extends Processor> getSerializer(String id) {
+        return serializerRegistry.get(id);
+    }
+
     public static JsonDeserializer<? extends Processor> getDeserializer(String id) {
         return deserializerRegistry.get(id);
     }
@@ -46,6 +56,7 @@ public class ProcessorRegistry {
         System.out.println("Loading processors from service loader...");
         // Clear the registry and re-register all processors from the service loader
         registry.clear();
+        inveredRegistry.clear();
         deserializerRegistry.clear();
         ServiceLoader<Processor> service = ServiceLoader.load(Processor.class);
         List<Provider<Processor>> processors = service.stream().toList();

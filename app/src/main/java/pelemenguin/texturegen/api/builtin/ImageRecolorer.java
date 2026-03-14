@@ -205,7 +205,7 @@ public class ImageRecolorer implements Processor {
             JsonObject json = new JsonObject();
             JsonObject paletteObject = new JsonObject();
             for (Map.Entry<Integer, Integer> entry : src.palette.colors.entrySet()) {
-                paletteObject.addProperty(entry.getKey().toString(), entry.getValue());
+                paletteObject.addProperty(entry.getKey().toString(), Integer.toUnsignedString(entry.getValue(), 16));
             }
             json.add("palette", paletteObject);
             return json;

@@ -42,6 +42,10 @@ public class TerminalMenu {
         return addKey(key, this.autoUppercase ? String.valueOf(Character.toUpperCase(key)) : key.toString(), description, action);
     }
 
+    public char scan(TerminalMenuContext context) {
+        return this.scan(context.outStream(), context.scanner());
+    }
+
     public char scan(PrintStream out, Scanner scanner) {
         out.println("==========\n");
         if (this.description != null) {

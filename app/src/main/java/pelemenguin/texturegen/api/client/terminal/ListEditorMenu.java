@@ -40,6 +40,10 @@ public class ListEditorMenu<E> {
         return this;
     }
 
+    public void loop(TerminalMenuContext context) {
+        this.loop(context.outStream(), context.scanner());
+    }
+
     public void loop(PrintStream out, Scanner scanner) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();

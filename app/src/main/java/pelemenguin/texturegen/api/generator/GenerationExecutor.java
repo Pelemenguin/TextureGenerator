@@ -47,7 +47,8 @@ public class GenerationExecutor {
         final TerminalProgressReporter reporter;
         if (out != null && ANSIHelper.ansiEnabled()) {
             ANSIHelper.clear(out);
-            reporter = new TerminalProgressReporter();
+            // TODO: Keep this todo until we begin window client
+            reporter = new TerminalProgressReporter(System.out);
             reporter.registerCategory("Succeeded", i -> ANSIHelper.green(String.valueOf(i)), '#');
             reporter.registerCategory("Failed", i -> ANSIHelper.red(String.valueOf(i)), '!');
             reporter.registerCategory("Unfound", i -> ANSIHelper.yellow(String.valueOf(i)), '?');
