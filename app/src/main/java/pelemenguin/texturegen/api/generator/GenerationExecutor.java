@@ -225,6 +225,22 @@ public class GenerationExecutor {
                 converted.getGraphics().drawImage(image, 0, 0, null);
                 break;
             }
+            case BufferedImage.TYPE_3BYTE_BGR: {
+                WritableRaster originalData = image.getRaster();
+                WritableRaster newData = converted.getRaster();
+                int[] pixel = new int[3];
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        originalData.getPixel(x, y, pixel);
+                        // BGR to ARGB
+                        int b = pixel[0];
+                        int g = pixel[1];
+                        int r = pixel[2];
+                        newData.setPixel(x, y, new int[] {r, g, b, 255});
+                    }
+                }
+                break;
+            }
             case BufferedImage.TYPE_4BYTE_ABGR, BufferedImage.TYPE_4BYTE_ABGR_PRE: {
                 WritableRaster originalData = image.getRaster();
                 WritableRaster newData = converted.getRaster();
@@ -233,10 +249,10 @@ public class GenerationExecutor {
                     for (int y = 0; y < height; y++) {
                         originalData.getPixel(x, y, pixel);
                         // ABGR to ARGB
-                        int a = pixel[0];
-                        int b = pixel[1];
-                        int g = pixel[2];
-                        int r = pixel[3];
+                        int b = pixel[0];
+                        int g = pixel[1];
+                        int r = pixel[2];
+                        int a = pixel[3];
                         newData.setPixel(x, y, new int[] {r, g, b, a});
                     }
                 }
