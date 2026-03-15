@@ -287,8 +287,12 @@ public class ImageRecolorer implements Processor {
                 .autoUppercase()
                 .addKey('-', "Back")
                 .addKey('A', "Add or modify color", () -> {
-                    String greyString = new StringInput("Enter grey value (0-255):")
+                    String greyString = new StringInput("Enter grey value (0-255): (Leave empty to cancel)")
+                        .allowEmpty()
                         .scan(context);
+                    if (greyString.isBlank()) {
+                        return;
+                    }
                     int grey;
                     try {
                         grey = Integer.parseInt(greyString);
@@ -301,13 +305,17 @@ public class ImageRecolorer implements Processor {
                     }
                     String colorString = new StringInput(processor.palette.colors.containsKey(grey)
                         ? (
-                            "Enter ARGB color in hex (e.g. FF00FF00 for opaque green) (current: " + Integer.toUnsignedString(processor.palette.colors.get(grey), 16) + "):"
+                            "Enter ARGB color in hex (e.g. FF00FF00 for opaque green) (current: " + Integer.toUnsignedString(processor.palette.colors.get(grey), 16) + "): (Leave empty to cancel)"
                             + (ANSIHelper.ansiEnabled()
                                 ? (" " + ANSIHelper.rgbBackground("      ", processor.palette.colors.get(grey)))
                                 : "")
                         )
                         : "Enter ARGB color in hex (e.g. FF00FF00 for opaque green):")
+                        .allowEmpty()
                         .scan(context);
+                    if (colorString.isBlank()) {
+                        return;
+                    }
                     int colorARGB;
                     try {
                         colorARGB = Integer.parseUnsignedInt(colorString, 16);
@@ -320,8 +328,12 @@ public class ImageRecolorer implements Processor {
                     processor.palette.refreshCache();
                 })
                 .addKey('D', "Delete color", () -> {
-                    String greyString = new StringInput("Enter grey value to delete (0-255):")
+                    String greyString = new StringInput("Enter grey value to delete (0-255): (Leave empty to cancel)")
+                        .allowEmpty()
                         .scan(context);
+                    if (greyString.isBlank()) {
+                        return;
+                    }
                     int grey;
                     try {
                         grey = Integer.parseInt(greyString);
