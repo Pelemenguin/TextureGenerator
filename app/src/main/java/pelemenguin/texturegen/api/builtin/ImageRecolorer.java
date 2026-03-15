@@ -2,9 +2,9 @@ package pelemenguin.texturegen.api.builtin;
 
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import com.google.gson.JsonDeserializationContext;
@@ -130,7 +130,7 @@ public class ImageRecolorer implements Processor {
 
     public static class Palette {
 
-        private HashMap<Integer, Integer> colors = new HashMap<>();
+        private TreeMap<Integer, Integer> colors = new TreeMap<>();
 
         private int[] cachedColors = new int[256];
 
@@ -339,7 +339,7 @@ public class ImageRecolorer implements Processor {
                     processor.palette.refreshCache();
                 });
             while (true) {
-                StringBuilder descStringBuilder = new StringBuilder("Image Recolorer\n");
+                StringBuilder descStringBuilder = new StringBuilder("Image Recolorer\n\nPalette:\n");
 
                 for (var entry : processor.palette.colors.entrySet()) {
                     int gray = entry.getKey();

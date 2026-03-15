@@ -51,7 +51,7 @@ public class TerminalMenu {
         return this.scan(context.outStream(), context.scanner());
     }
 
-    public char scan(PrintStream out, Scanner scanner) {
+    private void printDescAndKeys(PrintStream out) {
         out.println("==========\n");
         if (this.description != null) {
             out.println(description);
@@ -62,6 +62,10 @@ public class TerminalMenu {
         }
 
         out.print(ANSIHelper.magenta("\n> "));
+    }
+
+    public char scan(PrintStream out, Scanner scanner) {
+        this.printDescAndKeys(out);
 
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();

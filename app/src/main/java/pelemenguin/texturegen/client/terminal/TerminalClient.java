@@ -34,7 +34,7 @@ public class TerminalClient {
         INSTANCE.client = client;
 
         try (Scanner scanner = new Scanner(System.in)) {
-            TerminalMenuContext context = new TerminalMenuContext(System.out, scanner);
+            TerminalMenuContext context = new TerminalMenuContext(System.out, System.in, scanner);
             if (args.workspace == null) {
                 new TerminalMenu("""
 
