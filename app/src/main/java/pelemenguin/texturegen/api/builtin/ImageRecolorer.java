@@ -16,6 +16,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.ColorSelectorMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -303,26 +304,11 @@ public class ImageRecolorer implements Processor {
                         context.outStream().println(ANSIHelper.red("Invalid grey value: " + greyString));
                         return;
                     }
-                    String colorString = new StringInput(processor.palette.colors.containsKey(grey)
-                        ? (
-                            "Enter ARGB color in hex (e.g. FF00FF00 for opaque green) (current: " + Integer.toUnsignedString(processor.palette.colors.get(grey), 16) + "): (Leave empty to cancel)"
-                            + (ANSIHelper.ansiEnabled()
-                                ? (" " + ANSIHelper.rgbBackground("      ", processor.palette.colors.get(grey)))
-                                : "")
-                        )
-                        : "Enter ARGB color in hex (e.g. FF00FF00 for opaque green):")
-                        .allowEmpty()
-                        .scan(context);
-                    if (colorString.isBlank()) {
-                        return;
+                    int original = 0xFFFFFFFF;
+                    if (processor.palette.colors.containsKey(grey)) {
+                        original = processor.palette.colors.get(grey);
                     }
-                    int colorARGB;
-                    try {
-                        colorARGB = Integer.parseUnsignedInt(colorString, 16);
-                    } catch (NumberFormatException e) {
-                        context.outStream().println(ANSIHelper.red("Invalid color value: " + colorString));
-                        return;
-                    }
+                    int colorARGB = new ColorSelectorMenu(original).loop(context).getIntARGB();
                     processor.palette.putColor(grey, colorARGB);
 
                     processor.palette.refreshCache();

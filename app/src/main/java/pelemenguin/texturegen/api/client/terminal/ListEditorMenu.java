@@ -155,11 +155,12 @@ public class ListEditorMenu<E> {
                             }
                             this.copyMode = false;
                         } else if (this.pasteMode) {
+                            outer:
                             try {
                                 E pasted = this.clipboardPaster.apply(clipboard);
                                 if (pasted == null) {
                                     out.println(ANSIHelper.red("Failed to paste from clipboard!"));
-                                    return;
+                                    break outer;
                                 }
                                 this.data.add(index, pasted);
                             } catch (Throwable t) {

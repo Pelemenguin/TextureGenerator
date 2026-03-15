@@ -70,6 +70,11 @@ public class ANSIHelper {
         return "\u001B[38;2;" + r1 + ";" + g1 + ";" + b1 + "m\u001B[48;2;" + r2 + ";" + g2 + ";" + b2 + "m" + content + "\u001B[0m";
     }
 
+    public static String bold(String content) {
+        if (!enableANSI) return content;
+        return "\u001B[1m" + content + "\u001B[0m";
+    }
+
     public static void clear(PrintStream out) {
         if (!enableANSI) {
             out.println("\n================\n\n");

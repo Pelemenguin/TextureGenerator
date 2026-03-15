@@ -51,21 +51,25 @@ public class TerminalMenu {
         return this.scan(context.outStream(), context.scanner());
     }
 
-    private void printDescAndKeys(PrintStream out) {
-        out.println("==========\n");
+    public String getDisplayContent() {
+        StringBuilder sb = new StringBuilder();
         if (this.description != null) {
-            out.println(description);
+            sb.append(description).append('\n');
         }
 
         for (String keyRepr : descriptions.keySet()) {
-            out.println(ANSIHelper.blue("[" + keyRepr + "] ") + descriptions.get(keyRepr));
+            sb.append(ANSIHelper.blue("[" + keyRepr + "] ") + descriptions.get(keyRepr)).append('\n');
         }
-
-        out.print(ANSIHelper.magenta("\n> "));
+        if (sb.charAt(sb.length() - 1) == '\n') {
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        return sb.toString();
     }
 
     public char scan(PrintStream out, Scanner scanner) {
-        this.printDescAndKeys(out);
+        out.println("==========\n");
+        out.println(this.getDisplayContent());
+        out.print(ANSIHelper.magenta("\n> "));
 
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
