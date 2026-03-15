@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -25,6 +24,7 @@ public class GeneratorInfo {
     public String suffix;
     public List<String> fallbacks = new ArrayList<>();
     public List<Processor> processors = new ArrayList<>();
+    public List<String> types = new ArrayList<>();
 
     public static GeneratorInfo openFromFile(File file) throws FileNotFoundException, IOException, JsonIOException, JsonSyntaxException {
         try (FileReader reader = new FileReader(file)) {

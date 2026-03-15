@@ -40,6 +40,7 @@ public class GenerationExecutor {
 
     public static ExecutionResult run(Path assetsFolder, Path outputFolder, List<TextureInfo> textureInfos, GeneratorInfo generatorInfo, PrintStream out) {
         List<String> fallbacks = generatorInfo.fallbacks;
+        List<String> types = generatorInfo.types;
         List<Processor> processors = generatorInfo.processors;
         String resultSuffix = generatorInfo.suffix;
 
@@ -55,6 +56,7 @@ public class GenerationExecutor {
                 terminalProgressReporter.registerCategory("Succeeded", i -> ANSIHelper.green(String.valueOf(i)), '#');
                 terminalProgressReporter.registerCategory("Failed", i -> ANSIHelper.red(String.valueOf(i)), '!');
                 terminalProgressReporter.registerCategory("Unfound", i -> ANSIHelper.yellow(String.valueOf(i)), '?');
+                terminalProgressReporter.registerCategory("Skipped", i -> ANSIHelper.blue(String.valueOf(i)), '/');
                 terminalProgressReporter.updateTotal(totalImages);
 
                 terminalProgressReporter.loop(out);
@@ -64,6 +66,7 @@ public class GenerationExecutor {
                 plainTextProgressReporter.registerCategory("Succeeded");
                 plainTextProgressReporter.registerCategory("Failed");
                 plainTextProgressReporter.registerCategory("Unfound");
+                plainTextProgressReporter.registerCategory("Skipped");
 
                 plainTextProgressReporter.updateTotal(totalImages);
                 plainTextProgressReporter.loop(out);
@@ -78,6 +81,11 @@ public class GenerationExecutor {
         ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
 
         for (TextureInfo textureInfo : textureInfos) {
+            if (!textureInfo.supportTypes(types)) {
+                reporter.increase("Skipped");
+                continue;
+            }
+
             service.submit(() -> {
                 Path path = textureInfo.path;
 
@@ -169,13 +177,15 @@ public class GenerationExecutor {
         int successfulImages = reporter.getData("Succeeded");
         int failedImages = reporter.getData("Failed");
         int unfoundImages = reporter.getData("Unfound");
+        int skippedImages = reporter.getData("Skipped");
 
-        if (out != null && ANSIHelper.ansiEnabled()) {
+        if (out != null) {
             ANSIHelper.clear(out);
             out.println(ANSIHelper.blue("Processing complete!"));
             out.println("Succeeded | " + ANSIHelper.green(String.valueOf(successfulImages)));
             out.println("Failed    | " + ANSIHelper.red(String.valueOf(failedImages)));
             out.println("Unfound   | " + ANSIHelper.yellow(String.valueOf(unfoundImages)));
+            out.println("Skipped   | " + ANSIHelper.blue(String.valueOf(skippedImages)));
         }
 
         return new ExecutionResult(

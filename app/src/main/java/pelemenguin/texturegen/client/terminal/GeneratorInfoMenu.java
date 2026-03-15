@@ -60,6 +60,15 @@ public class GeneratorInfoMenu {
                         this.info.suffix = result;
                     }
                 })
+                .addKey('T', "Texture types", () -> {
+                    new ListEditorMenu<>(this.info.types, (t, setter) -> {
+                        String type = new StringInput("Enter texture type: (leave empty to cancel)")
+                            .allowEmpty().scan(context);
+                        if (type != null) {
+                            setter.accept(type);
+                        }
+                    }).loop(context);
+                })
                 .addKey('F', "Fallbacks", () -> {
                     new ListEditorMenu<>(this.info.fallbacks, (original, setter) -> {
                         String result = new StringInput("Enter fallbak: (Original: %s)\n(Leave empty to cancel)"
