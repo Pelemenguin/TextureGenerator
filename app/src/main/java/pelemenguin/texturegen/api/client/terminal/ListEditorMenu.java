@@ -67,6 +67,9 @@ public class ListEditorMenu<E> {
         return this.loop(context.outStream(), context.scanner());
     }
 
+    private boolean deleteMode = false;
+    private int movingModeSelected = -1; // -1 for not selecting, -2 for waiting for the element to move
+
     public E loop(PrintStream out, Scanner scanner) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();
@@ -82,11 +85,38 @@ public class ListEditorMenu<E> {
             for (int i = 0; i < 10 && i < data.size() - offset; i++) {
                 int index = i + offset;
                 E data = this.data.get(index);
-                menu.addKey((char) ('0' + (i + 1) % 10), ANSIHelper.cyan((index + 1) + ". ") + (data == null ? "[NULL]" : this.strigifier.apply(data)), () -> {
+                String strigified = (data == null ? "[NULL]" : this.strigifier.apply(data));
+                String repr = ANSIHelper.cyan((index + 1) + ". ") + (this.deleteMode
+                        ? ANSIHelper.red(strigified)
+                        : this.movingModeSelected != -1
+                        ? ANSIHelper.yellow(strigified)
+                        : strigified
+                    );
+                menu.addKey((char) ('0' + (i + 1) % 10), repr, () -> {
                     if (this.selectMode) {
                         resultHolder[0] = data;
                     } else {
-                        editor.accept(data, d -> this.data.set(index, d));
+                        if (this.deleteMode) {
+                            new TerminalMenu("Are you sure you want to delete " + repr + "?\n" + ANSIHelper.red("This action cannot be undone!"))
+                                .autoUppercase()
+                                .addKey('Y', "Yes", () -> {
+                                    this.data.remove(index);
+                                    this.deleteMode = false;
+                                })
+                                .addKey('N', "No")
+                                .scan(out, scanner);
+                        } else if (this.movingModeSelected == -2) {
+                            this.movingModeSelected = index;
+                        } else if (this.movingModeSelected >= 0) {
+                            if (this.movingModeSelected != index) {
+                                E temp = this.data.get(this.movingModeSelected);
+                                this.data.remove(this.movingModeSelected);
+                                this.data.add(index, temp);
+                            }
+                            this.movingModeSelected = -1;
+                        } else {
+                            editor.accept(data, d -> this.data.set(index, d));
+                        }
                     }
                 });
             }
@@ -117,59 +147,35 @@ public class ListEditorMenu<E> {
                 });
             }
 
-            if (!this.immutable) {
+            if (!this.selectMode && !this.immutable) {
                 menu.addKey('A', "Append new", () -> {
                     this.data.addLast(this.defaultInstanceSupplier.get());
                     this.page = totalPage - 1;
                 });
-                menu.addKey('D', "Delete", () -> {
-                    String result = new StringInput("Deleting element's index? (1 ~ " + this.data.size() + ") (Leave empty to cancel)")
-                        .allowEmpty()
-                        .scan(out, scanner);
-                    if (result.isEmpty()) {
-                        return;
+                menu.addKey('D', this.deleteMode ? "Cancel deletion" : "Delete", () -> {
+                    if (this.movingModeSelected != -1) {
+                        this.movingModeSelected = -1;
                     }
-                    try {
-                        int index = Integer.parseInt(result);
-                        if (index < 1 || index > this.data.size()) {
-                            throw new NumberFormatException();
-                        }
-                        this.data.remove(index - 1);
-                        if (page >= (this.data.size() - 1) / 10 + 1) {
-                            page = Math.max(0, page - 1);
-                        }
-                    } catch (NumberFormatException e) {
-                        out.println(ANSIHelper.red("Invalid index: " + result));
-                    }
+                    this.deleteMode = !this.deleteMode;
                 });
-                menu.addKey('M', "Move", () -> {
-                    String result = new StringInput("Moving element's index? (1 ~ " + this.data.size() + ") (Leave empty to cancel)")
-                        .allowEmpty()
-                        .scan(out, scanner);
-                    if (result.isEmpty()) {
-                        return;
+                menu.addKey('M', switch (this.movingModeSelected) {
+                    case -1 -> "Move";
+                    case -2 -> "Cancel move (Selecting target)";
+                    default -> {
+                        String repr = ANSIHelper.cyan((this.movingModeSelected + 1) + ". ");
+                        E cur = this.data.get(this.movingModeSelected);
+                        repr += ANSIHelper.yellow(cur == null ? "[NULL]" : (this.strigifier.apply(cur)));
+                        yield "Cancel move (Inserting before)" + (this.movingModeSelected < 0 ? ""
+                            : (" (Selected: " + repr + ")"));
                     }
-                    try {
-                        int index = Integer.parseInt(result);
-                        if (index < 1 || index > this.data.size()) {
-                            throw new NumberFormatException();
-                        }
-                        E element = this.data.remove(index - 1);
-                        String newIndexResult = new StringInput("New index? (1 ~ " + this.data.size() + ") (Leave empty to cancel)")
-                            .allowEmpty()
-                            .scan(out, scanner);
-                        if (newIndexResult.isEmpty()) {
-                            // Put back the element
-                            this.data.add(index - 1, element);
-                            return;
-                        }
-                        int newIndex = Integer.parseInt(newIndexResult);
-                        if (newIndex < 1 || newIndex > this.data.size() + 1) {
-                            throw new NumberFormatException();
-                        }
-                        this.data.add(newIndex - 1, element);
-                    } catch (NumberFormatException e) {
-                        out.println(ANSIHelper.red("Invalid index: " + result));
+                }, () -> {
+                    if (this.deleteMode) {
+                        this.deleteMode = false;
+                    }
+                    if (this.movingModeSelected == -1) {
+                        this.movingModeSelected = -2;
+                    } else {
+                        this.movingModeSelected = -1;
                     }
                 });
             }

@@ -32,6 +32,7 @@ public class MaterialListMenu {
     }
 
     private int page = 0;
+    private boolean deleteMode = false;
     private void _loop(TextureGeneratorWorkspace workspace, TerminalMenuContext context, File folder) {
         if (!folder.exists()) {
             try {
@@ -51,24 +52,12 @@ public class MaterialListMenu {
 
             menu.addKey('B', "Back", () -> {});
             menu.addKey('N', "Create new generator file", () -> this.createNewFile(folder, context));
-            menu.addKey('F', "Create new generator folder\n", () -> this.createNewFolder(folder, context));
+            menu.addKey('F', "Create new generator folder", () -> this.createNewFolder(folder, context));
+            menu.addKey('D', this.deleteMode ? "Cancel deletion\n" : "Delete a generator file/folder\n", () -> {
+                this.deleteMode = !this.deleteMode;
+            });
 
-            for (int i = 0; i < 10 && i < files.length - page * 10; i++) {
-                int index = page * 10 + i;
-                File file = files[index];
-                menu.addKey((char) ('0' + i), file.getName() + (file.isDirectory() ? ANSIHelper.cyan(" [FOLDER]") : ""), () -> {
-                    if (file.isDirectory()) {
-                        this._loop(workspace, context, file);
-                    } else {
-                        GeneratorInfoMenu.loop(workspace, context, file);
-                    }
-                });
-            }
-            if (page > 0) {
-                menu.addKey('<', "Previous Page", () -> page--);
-            } else if (page < (files.length - 1) / 10) {
-                menu.addKey('>', "Next Page", () -> page++);
-            }
+            this.listFiles(menu, files, workspace, context);
 
             char result = menu.scan(context);
             if (result == 'B') {
@@ -77,6 +66,54 @@ public class MaterialListMenu {
 
             menu.clearKeys();
         }
+    }
+
+    private void listFiles(TerminalMenu menu, File[] files, TextureGeneratorWorkspace workspace, TerminalMenuContext context) {
+        for (int i = 0; i < 10 && i < files.length - page * 10; i++) {
+            int index = page * 10 + i;
+            File file = files[index];
+            menu.addKey((char) ('0' + (i + 1) % 10),  (file.isDirectory() ? ANSIHelper.cyan("[FOLDER] ") : "") + (this.deleteMode ? ANSIHelper.red(file.getName()) : file.getName()), () -> {
+                if (this.deleteMode) {
+                    new TerminalMenu("Are you sure you want to delete " + ANSIHelper.red(file.getName()) + "?\n" + ANSIHelper.red("This action cannot be undone!"))
+                        .autoUppercase()
+                        .addKey('Y', "Yes", () -> {
+                            if (file.isDirectory()) {
+                                this.deleteDirectory(file);
+                            } else {
+                                file.delete();
+                            }
+                            this.deleteMode = false;
+                        })
+                        .addKey('N', "No", () -> {})
+                        .scan(context);
+                    return;
+                }
+                if (file.isDirectory()) {
+                    this._loop(workspace, context, file);
+                } else {
+                    GeneratorInfoMenu.loop(workspace, context, file);
+                }
+            });
+        }
+        if (page > 0) {
+            menu.addKey('<', "Previous Page", () -> page--);
+        } else if (page < (files.length - 1) / 10) {
+            menu.addKey('>', "Next Page", () -> page++);
+        }
+    }
+
+    private void deleteDirectory(File target) {
+        File[] contents = target.listFiles();
+        if (contents != null) {
+            for (File file : contents) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+        target.delete();
     }
 
     private void createNewFile(File curFolder, TerminalMenuContext context) {
