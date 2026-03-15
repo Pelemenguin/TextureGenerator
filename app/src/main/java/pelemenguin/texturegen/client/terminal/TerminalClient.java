@@ -1,5 +1,6 @@
 package pelemenguin.texturegen.client.terminal;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -34,7 +35,13 @@ public class TerminalClient {
         INSTANCE.client = client;
 
         try (Scanner scanner = new Scanner(System.in)) {
-            TerminalMenuContext context = new TerminalMenuContext(System.out, System.in, scanner);
+            TerminalMenuContext context = new TerminalMenuContext(
+                System.out,
+                System.in,
+                scanner, 
+                // Get system clipboard
+                Toolkit.getDefaultToolkit().getSystemClipboard()
+            );
             if (args.workspace == null) {
                 new TerminalMenu("""
 

@@ -18,7 +18,7 @@ import pelemenguin.texturegen.util.ProcessorDeserializer;
 public class GeneratorInfo {
 
     public static final Gson GSON = new GsonBuilder()
-        .registerTypeAdapter(Processor.class, ProcessorDeserializer.INSTANCE)
+        .registerTypeHierarchyAdapter(Processor.class, ProcessorDeserializer.INSTANCE)
         .setPrettyPrinting()
         .create();
 

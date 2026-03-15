@@ -1,5 +1,8 @@
 package pelemenguin.texturegen.api.client.terminal;
 
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Scanner;
@@ -16,6 +19,8 @@ public class ListEditorMenu<E> {
     private String description = null;
     private Consumer<TerminalMenu> extraKeys = t -> {};
     private Function<E, String> strigifier = String::valueOf;
+    private BiConsumer<E, Clipboard> clipboardCopier;
+    private Function<Clipboard, E> clipboardPaster;
     private int page = 0;
     private boolean immutable = false;
     private boolean selectMode = false;
@@ -57,14 +62,44 @@ public class ListEditorMenu<E> {
         return this;
     }
 
+    public ListEditorMenu<E> copyToClipboard(BiConsumer<E, Clipboard> copier) {
+        this.clipboardCopier = copier;
+        return this;
+    }
+
+    public ListEditorMenu<E> copyToClipboardAsString(Function<E, String> strigifier) {
+        return this.copyToClipboard((e, clipboard) -> {
+            StringSelection selection = new StringSelection(strigifier.apply(e));
+            clipboard.setContents(selection, null);
+        });
+    }
+
+    public ListEditorMenu<E> pasteFromClipboard(Function<Clipboard, E> paster) {
+        this.clipboardPaster = paster;
+        return this;
+    }
+
+    public ListEditorMenu<E> pasteFromClipboardFromString(Function<String, E> parser) {
+        return this.pasteFromClipboard(clipboard -> {
+            try {
+                String data = (String) clipboard.getData(DataFlavor.stringFlavor);
+                return parser.apply(data);
+            } catch (Exception e) {
+                return null;
+            }
+        });
+    }
+
     public E loop(TerminalMenuContext context) {
-        return this.loop(context.outStream(), context.scanner());
+        return this.loop(context.outStream(), context.scanner(), context.clipboard());
     }
 
     private boolean deleteMode = false;
     private int movingModeSelected = -1; // -1 for not selecting, -2 for waiting for the element to move
+    private boolean copyMode = false;
+    private boolean pasteMode = false;
 
-    public E loop(PrintStream out, Scanner scanner) {
+    public E loop(PrintStream out, Scanner scanner, Clipboard clipboard) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();
         E[] resultHolder = (E[]) new Object[1];
@@ -84,6 +119,10 @@ public class ListEditorMenu<E> {
                         ? ANSIHelper.red(strigified)
                         : this.movingModeSelected != -1
                         ? ANSIHelper.yellow(strigified)
+                        : this.copyMode
+                        ? ANSIHelper.magenta(strigified)
+                        : this.pasteMode
+                        ? ANSIHelper.green(strigified)
                         : strigified
                     );
                 menu.addKey((char) ('0' + (i + 1) % 10), repr, () -> {
@@ -108,6 +147,25 @@ public class ListEditorMenu<E> {
                                 this.data.add(index, temp);
                             }
                             this.movingModeSelected = -1;
+                        } else if (this.copyMode) {
+                            try {
+                                this.clipboardCopier.accept(data, clipboard);
+                            } catch (Throwable t) {
+                                out.println(ANSIHelper.red("Failed to copy to clipboard: " + t.getMessage()));
+                            }
+                            this.copyMode = false;
+                        } else if (this.pasteMode) {
+                            try {
+                                E pasted = this.clipboardPaster.apply(clipboard);
+                                if (pasted == null) {
+                                    out.println(ANSIHelper.red("Failed to paste from clipboard!"));
+                                    return;
+                                }
+                                this.data.add(index, pasted);
+                            } catch (Throwable t) {
+                                out.println(ANSIHelper.red("Failed to paste from clipboard: " + t.getMessage()));
+                            }
+                            this.pasteMode = false;
                         } else {
                             editor.accept(data, d -> this.data.set(index, d));
                         }
@@ -159,6 +217,8 @@ public class ListEditorMenu<E> {
                     this.page = totalPage - 1;
                 });
                 menu.addKey('D', this.deleteMode ? "Cancel deletion" : "Delete", () -> {
+                    this.copyMode = false;
+                    this.pasteMode = false;
                     if (this.movingModeSelected != -1) {
                         this.movingModeSelected = -1;
                     }
@@ -175,14 +235,31 @@ public class ListEditorMenu<E> {
                             : (" (Selected: " + repr + ")"));
                     }
                 }, () -> {
-                    if (this.deleteMode) {
-                        this.deleteMode = false;
-                    }
+                    this.copyMode = false;
+                    this.deleteMode = false;
+                    this.pasteMode = false;
                     if (this.movingModeSelected == -1) {
                         this.movingModeSelected = -2;
                     } else {
                         this.movingModeSelected = -1;
                     }
+                });
+            }
+
+            if (this.clipboardCopier != null) {
+                menu.addKey('C', this.copyMode ? "Cancel copy" : "Copy element", () -> {
+                    this.deleteMode = false;
+                    this.movingModeSelected = -1;
+                    this.pasteMode = false;
+                    this.copyMode = !this.copyMode;
+                });
+            }
+            if (this.clipboardPaster != null) {
+                menu.addKey('P', this.pasteMode ? "Cancel paste (Insert element)" : "Paste element", () -> {
+                    this.deleteMode = false;
+                    this.movingModeSelected = -1;
+                    this.copyMode = false;
+                    this.pasteMode = !this.pasteMode;
                 });
             }
 

@@ -7,6 +7,7 @@ import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
+import pelemenguin.texturegen.api.generator.GeneratorInfo;
 import pelemenguin.texturegen.api.generator.Processor;
 import pelemenguin.texturegen.api.generator.ProcessorRegistry;
 
@@ -19,7 +20,9 @@ public class ProcessorSequenceMenu {
             } else {
                 edit(original, setter, context);
             }
-        }).strigifier(Processor::getProcessorTitle);
+        }).strigifier(Processor::getProcessorTitle)
+            .copyToClipboardAsString((p) -> GeneratorInfo.GSON.toJson(p))
+            .pasteFromClipboardFromString((p) -> GeneratorInfo.GSON.fromJson(p, Processor.class));
         menu.loop(context);
     }
 

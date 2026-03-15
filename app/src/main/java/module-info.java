@@ -1,6 +1,7 @@
 module pelemenguin.texturegen {
     requires transitive java.desktop;
     requires transitive com.google.gson;
+    requires java.datatransfer;
 
     exports pelemenguin.texturegen.api.builtin;
     exports pelemenguin.texturegen.api.client.terminal;
