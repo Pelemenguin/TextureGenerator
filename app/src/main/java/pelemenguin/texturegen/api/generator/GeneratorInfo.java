@@ -23,7 +23,7 @@ public class GeneratorInfo {
         .create();
 
     public String suffix;
-    public String[] fallbacks = new String[0];
+    public List<String> fallbacks = new ArrayList<>();
     public List<Processor> processors = new ArrayList<>();
 
     public static GeneratorInfo openFromFile(File file) throws FileNotFoundException, IOException, JsonIOException, JsonSyntaxException {

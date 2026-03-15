@@ -6,6 +6,7 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -38,7 +39,7 @@ public class GenerationExecutor {
     }
 
     public static ExecutionResult run(Path assetsFolder, Path outputFolder, List<TextureInfo> textureInfos, GeneratorInfo generatorInfo, PrintStream out) {
-        String[] fallbacks = generatorInfo.fallbacks;
+        List<String> fallbacks = generatorInfo.fallbacks;
         List<Processor> processors = generatorInfo.processors;
         String resultSuffix = generatorInfo.suffix;
 
@@ -82,16 +83,18 @@ public class GenerationExecutor {
 
                 Path fallbackPath = null;
                 String fallbackUsed = null;
+                File imageFile = null;
                 for (String fallback : fallbacks) {
                     fallbackPath = assetsFolder.resolve(path.resolveSibling(path.getFileName().toString().replaceFirst("(\\.\\w+)$", "_" + fallback + "$1")));
                     try {
                         File currentFile = fallbackPath.toFile();
                         if (currentFile.exists()) {
                             fallbackUsed = fallback;
+                            imageFile = currentFile;
                             break;
                         }
                     } catch (Exception e) {
-                        exceptions.add(new GenerationError(textureInfo, e));
+                        exceptions.add(new GenerationError(textureInfo, new GeneratorException("Exception occured while trying fallbacks. current fallback path: " + fallbackPath, e)));
                     }
                 }
                 if (fallbackUsed == null) {
@@ -99,11 +102,11 @@ public class GenerationExecutor {
                         File currentFile = assetsFolder.resolve(path).toFile();
                         if (currentFile.exists()) {
                             fallbackPath = path;
+                            imageFile = currentFile;
                         } else {
                             fallbackPath = null;
                         }
                     } catch (Exception e) {
-                        exceptions.add(new GenerationError(textureInfo, e));
                         fallbackPath = null;
                     }
                 }
@@ -120,8 +123,11 @@ public class GenerationExecutor {
                     fallbackUsed
                 );
 
+                File resultFile = null;
                 try {
-                    File imageFile = assetsFolder.resolve(fallbackPath).toFile();
+                    if (!imageFile.canRead()) {
+                        throw new IOException("Cannot read file: " + imageFile);
+                    }
                     BufferedImage image = ImageIO.read(imageFile);
                     image = toARGB(image);
 
@@ -129,7 +135,7 @@ public class GenerationExecutor {
                     Path resultPath = outputFolder.resolve(path.resolveSibling(
                         path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
                     ));
-                    File resultFile = resultPath.toFile();
+                    resultFile = resultPath.toFile();
 
                     if (!resultFile.exists()) {
                         File parentFile = resultFile.getParentFile();
@@ -140,8 +146,8 @@ public class GenerationExecutor {
                     }
 
                     ImageIO.write(result, "png", resultFile);
-                } catch (Exception e) {
-                    exceptions.add(new GenerationError(textureInfo, e));
+                } catch (Throwable e) {
+                    exceptions.add(new GenerationError(textureInfo, new GeneratorException("Exception while processing " + imageFile + ", with result file " + resultFile, e)));
                     reporter.increase("Failed");
                     return;
                 }
@@ -438,6 +444,16 @@ public class GenerationExecutor {
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Result at index " + index + " is not of type " + types[index].getName());
             }
+        }
+    }
+
+    public static class GeneratorException extends Exception {
+        public GeneratorException(String message) {
+            super(message);
+        }
+
+        public GeneratorException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

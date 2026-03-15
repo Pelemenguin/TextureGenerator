@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -58,6 +59,18 @@ public class GeneratorInfoMenu {
                     if (!result.isBlank()) {
                         this.info.suffix = result;
                     }
+                })
+                .addKey('F', "Fallbacks", () -> {
+                    new ListEditorMenu<>(this.info.fallbacks, (original, setter) -> {
+                        String result = new StringInput("Enter fallbak: (Original: %s)\n(Leave empty to cancel)"
+                            .formatted(ANSIHelper.blue(String.valueOf(original)))
+                        )
+                            .allowEmpty()
+                            .scan(context);
+                        if (!result.isBlank()) {
+                            setter.accept(result);
+                        }
+                    }).loop(context);
                 })
                 .addKey('P', "Processor sequence", () -> ProcessorSequenceMenu.loop(context, this));
 

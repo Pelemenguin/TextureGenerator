@@ -28,13 +28,7 @@ public class ListEditorMenu<E> {
 
     @SuppressWarnings("unchecked")
     public ListEditorMenu(List<E> data, BiConsumer<E, Consumer<E>> editor) {
-        this(data, editor, () -> {
-            E[] result = (E[]) new Object[1];
-            editor.accept(null, (e) -> {
-                result[0] = e;
-            });
-            return result[0];
-        });
+        this(data, editor, null);
     }
 
     public ListEditorMenu(List<E> data, BiConsumer<E, Consumer<E>> editor, Supplier<E> defaultInstanceSupplier) {
@@ -149,7 +143,19 @@ public class ListEditorMenu<E> {
 
             if (!this.selectMode && !this.immutable) {
                 menu.addKey('A', "Append new", () -> {
-                    this.data.addLast(this.defaultInstanceSupplier.get());
+                    if (this.defaultInstanceSupplier == null) {
+                        E[] holder = (E[]) new Object[1];
+                        editor.accept(null, (e) -> {
+                            holder[0] = e;
+                        });
+                        if (holder[0] == null) {
+                            out.println(ANSIHelper.red("Creation cancelled!"));
+                            return;
+                        }
+                        this.data.addLast(holder[0]);
+                    } else {
+                        this.data.addLast(this.defaultInstanceSupplier.get());
+                    }
                     this.page = totalPage - 1;
                 });
                 menu.addKey('D', this.deleteMode ? "Cancel deletion" : "Delete", () -> {
