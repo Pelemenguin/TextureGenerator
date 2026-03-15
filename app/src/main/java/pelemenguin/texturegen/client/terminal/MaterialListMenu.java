@@ -33,6 +33,7 @@ public class MaterialListMenu {
 
     private int page = 0;
     private boolean deleteMode = false;
+    private boolean renameMode = false;
     private void _loop(TextureGeneratorWorkspace workspace, TerminalMenuContext context, File folder) {
         if (!folder.exists()) {
             try {
@@ -53,8 +54,13 @@ public class MaterialListMenu {
             menu.addKey('B', "Back", () -> {});
             menu.addKey('N', "Create new generator file", () -> this.createNewFile(folder, context));
             menu.addKey('F', "Create new generator folder", () -> this.createNewFolder(folder, context));
-            menu.addKey('D', this.deleteMode ? "Cancel deletion\n" : "Delete a generator file/folder\n", () -> {
+            menu.addKey('D', this.deleteMode ? "Cancel deletion" : "Delete a generator file/folder", () -> {
+                this.renameMode = false;
                 this.deleteMode = !this.deleteMode;
+            });
+            menu.addKey('R', this.renameMode ? "Cancel rename\n" : "Rename file / folder\n", () -> {
+                this.deleteMode = false;
+                this.renameMode = !this.renameMode;
             });
 
             this.listFiles(menu, files, workspace, context);
@@ -72,9 +78,23 @@ public class MaterialListMenu {
         for (int i = 0; i < 10 && i < files.length - page * 10; i++) {
             int index = page * 10 + i;
             File file = files[index];
-            menu.addKey((char) ('0' + (i + 1) % 10),  (file.isDirectory() ? ANSIHelper.cyan("[FOLDER] ") : "") + (this.deleteMode ? ANSIHelper.red(file.getName()) : file.getName()), () -> {
+            String fileNameTemp = file.getName();
+            final String fileName;
+            if (fileNameTemp.endsWith(".generator-info.json")) {
+                fileName = fileNameTemp.substring(0, fileNameTemp.length() - ".generator-info.json".length());
+            } else if (fileNameTemp.endsWith(".json")) {
+                fileName = fileNameTemp.substring(0, fileNameTemp.length() - ".json".length());
+            } else {
+                fileName = fileNameTemp;
+            }
+            menu.addKey((char) ('0' + (i + 1) % 10),  (file.isDirectory() ? ANSIHelper.cyan("[FOLDER] ") : "") + (this.deleteMode
+                    ? ANSIHelper.red(fileName)
+                    : this.renameMode
+                    ? ANSIHelper.yellow(fileName)
+                    : fileName
+                ), () -> {
                 if (this.deleteMode) {
-                    new TerminalMenu("Are you sure you want to delete " + ANSIHelper.red(file.getName()) + "?\n" + ANSIHelper.red("This action cannot be undone!"))
+                    new TerminalMenu("Are you sure you want to delete " + ANSIHelper.red(fileName) + "?\n" + ANSIHelper.red("This action cannot be undone!"))
                         .autoUppercase()
                         .addKey('Y', "Yes", () -> {
                             if (file.isDirectory()) {
@@ -86,6 +106,24 @@ public class MaterialListMenu {
                         })
                         .addKey('N', "No", () -> {})
                         .scan(context);
+                    return;
+                }
+                if (this.renameMode) {
+                    String newName = new StringInput("Enter new name for " + ANSIHelper.yellow(fileName) + ":\n(Leave empty to cancel)")
+                        .allowEmpty().scan(context);
+                    if (newName.isBlank()) {
+                        return;
+                    }
+                    if (!file.isDirectory() && !newName.endsWith(".json")) {
+                        newName += ".generator-info.json";
+                    }
+                    Path newPath = file.toPath().resolveSibling(newName);
+                    try {
+                        file.renameTo(newPath.toFile());
+                    } catch (Throwable e) {
+                        context.outStream().println(ANSIHelper.red("Failed to rename: " + e.getMessage()));
+                    }
+                    this.renameMode = false;
                     return;
                 }
                 if (file.isDirectory()) {

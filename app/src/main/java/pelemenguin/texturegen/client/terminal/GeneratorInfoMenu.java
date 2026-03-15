@@ -39,7 +39,7 @@ public class GeneratorInfoMenu {
 
     private List<GenerationExecutor.GenerationError> lastExceptions;
     public void loop(TerminalMenuContext context) {
-        TerminalMenu menu = new TerminalMenu()
+        TerminalMenu menu = new TerminalMenu("Opened: " + ANSIHelper.blue(this.file.toString()))
             .autoUppercase();
         while (true) {
             menu.addKey('B', "Save and back", () -> {})
@@ -94,7 +94,7 @@ public class GeneratorInfoMenu {
                 });
             }
 
-            context.outStream().println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
+            // context.outStream().println("Opened: " + ANSIHelper.blue(file.toString()) + "\n");
             char result = menu
                 .updateKeyDescription('S', "Suffix: " + (this.info.suffix == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(this.info.suffix)))
                 .scan(context);
