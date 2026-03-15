@@ -38,6 +38,11 @@ public class TerminalMenu {
         return this;
     }
 
+    private static final Runnable EMPTY_RUNNABLE = () -> {};
+    public TerminalMenu addKey(Character key, String description) {
+        return addKey(key, description, EMPTY_RUNNABLE);
+    }
+
     public TerminalMenu addKey(Character key, String description, Runnable action) {
         return addKey(key, this.autoUppercase ? String.valueOf(Character.toUpperCase(key)) : key.toString(), description, action);
     }

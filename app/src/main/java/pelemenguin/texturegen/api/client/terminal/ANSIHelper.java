@@ -43,6 +43,33 @@ public class ANSIHelper {
         return "\u001B[36m" + content + "\u001B[0m";
     }
 
+    public static String rgb(String content, int color) {
+        if (!enableANSI) return content;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        return "\u001B[38;2;" + r + ";" + g + ";" + b + "m" + content + "\u001B[0m";
+    }
+
+    public static String rgbBackground(String content, int color) {
+        if (!enableANSI) return content;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        return "\u001B[48;2;" + r + ";" + g + ";" + b + "m" + content + "\u001B[0m";
+    }
+
+    public static String rgbWithBackground(String content, int fgColor, int bgColor) {
+        if (!enableANSI) return content;
+        int r1 = (fgColor >> 16) & 0xFF;
+        int g1 = (fgColor >> 8) & 0xFF;
+        int b1 = fgColor & 0xFF;
+        int r2 = (bgColor >> 16) & 0xFF;
+        int g2 = (bgColor >> 8) & 0xFF;
+        int b2 = bgColor & 0xFF;
+        return "\u001B[38;2;" + r1 + ";" + g1 + ";" + b1 + "m\u001B[48;2;" + r2 + ";" + g2 + ";" + b2 + "m" + content + "\u001B[0m";
+    }
+
     public static void clear(PrintStream out) {
         if (!enableANSI) {
             out.println("\n================\n\n");

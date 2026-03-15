@@ -18,7 +18,7 @@ public class GeneratorInfoMenu {
 
     private TextureGeneratorWorkspace workspace;
     private File file;
-    private GeneratorInfo info;
+    GeneratorInfo info;
 
     public static void loop(TextureGeneratorWorkspace workspace, TerminalMenuContext context, File file) {
         INSTANCE.workspace = workspace;
@@ -58,7 +58,8 @@ public class GeneratorInfoMenu {
                     if (!result.isBlank()) {
                         this.info.suffix = result;
                     }
-                });
+                })
+                .addKey('P', "Processor sequence", () -> ProcessorSequenceMenu.loop(context, this));
 
             if (this.lastExceptions != null) {
                 menu.addKey('E', "Dump exceptions (" + this.lastExceptions.size() + ")", () -> {

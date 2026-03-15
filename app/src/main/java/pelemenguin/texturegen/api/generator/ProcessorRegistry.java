@@ -3,12 +3,14 @@ package pelemenguin.texturegen.api.generator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.ServiceLoader.Provider;
 
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 
 public class ProcessorRegistry {
     
@@ -16,6 +18,14 @@ public class ProcessorRegistry {
     private static HashMap<Class<? extends Processor>, String> inveredRegistry = new HashMap<>();
     private static HashMap<String, JsonDeserializer<? extends Processor>> deserializerRegistry = new HashMap<>();
     private static HashMap<String, JsonSerializer<? extends Processor>> serializerRegistry = new HashMap<>();
+
+    public static Set<String> getRegisteredProcessorIds() {
+        return registry.keySet();
+    }
+
+    public static Set<Class<? extends Processor>> getRegisteredProcessorClasses() {
+        return inveredRegistry.keySet();
+    }
     
     public static void register(String id, Class<? extends Processor> processorClass, JsonSerializer<? extends Processor> serializer, JsonDeserializer<? extends Processor> deserializer) {
         registry.put(id, processorClass);
@@ -99,6 +109,7 @@ public class ProcessorRegistry {
                 }
             }
         });
+        TerminalProcessorEditorProvider.Registry.INSTANCE.refreshService();
         serviceLoaded = true;
     }
 

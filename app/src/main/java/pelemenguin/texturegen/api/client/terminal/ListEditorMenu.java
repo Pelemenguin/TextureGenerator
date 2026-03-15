@@ -18,6 +18,24 @@ public class ListEditorMenu<E> {
     private Function<E, String> strigifier = String::valueOf;
     private int page = 0;
     private boolean immutable = false;
+    private boolean selectMode = false;
+
+    public ListEditorMenu(List<E> data) {
+        this(data, null, null);
+        this.immutable()
+            .selectMode();
+    }
+
+    @SuppressWarnings("unchecked")
+    public ListEditorMenu(List<E> data, BiConsumer<E, Consumer<E>> editor) {
+        this(data, editor, () -> {
+            E[] result = (E[]) new Object[1];
+            editor.accept(null, (e) -> {
+                result[0] = e;
+            });
+            return result[0];
+        });
+    }
 
     public ListEditorMenu(List<E> data, BiConsumer<E, Consumer<E>> editor, Supplier<E> defaultInstanceSupplier) {
         this.data = data;
@@ -40,13 +58,19 @@ public class ListEditorMenu<E> {
         return this;
     }
 
-    public void loop(TerminalMenuContext context) {
-        this.loop(context.outStream(), context.scanner());
+    public ListEditorMenu<E> selectMode() {
+        this.selectMode = true;
+        return this;
     }
 
-    public void loop(PrintStream out, Scanner scanner) {
+    public E loop(TerminalMenuContext context) {
+        return this.loop(context.outStream(), context.scanner());
+    }
+
+    public E loop(PrintStream out, Scanner scanner) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();
+        E[] resultHolder = (E[]) new Object[1];
         while (true) {
             int totalPage = (this.data.size() - 1) / 10 + 1;
             menu.updateDescription((this.description == null ? "" : (this.description + "\n\n"))
@@ -58,7 +82,13 @@ public class ListEditorMenu<E> {
             for (int i = 0; i < 10 && i < data.size() - offset; i++) {
                 int index = i + offset;
                 E data = this.data.get(index);
-                menu.addKey((char) ('0' + (i + 1) % 10), ANSIHelper.cyan((index + 1) + ". ") + (data == null ? "[NULL]" : this.strigifier.apply(data)), () -> editor.accept(data, d -> this.data.set(index, d)));
+                menu.addKey((char) ('0' + (i + 1) % 10), ANSIHelper.cyan((index + 1) + ". ") + (data == null ? "[NULL]" : this.strigifier.apply(data)), () -> {
+                    if (this.selectMode) {
+                        resultHolder[0] = data;
+                    } else {
+                        editor.accept(data, d -> this.data.set(index, d));
+                    }
+                });
             }
 
             if (this.page > 0) {
@@ -148,7 +178,9 @@ public class ListEditorMenu<E> {
 
             char result = menu.scan(out, scanner);
             if (result == '-') {
-                break;
+                return null;
+            } else if (this.selectMode && resultHolder[0] != null) {
+                return resultHolder[0];
             }
         }
     }

@@ -5,6 +5,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -14,6 +15,11 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.StringInput;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
+import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
@@ -83,6 +89,41 @@ public class ImageRecolorer implements Processor {
         return List.of(BufferedImage.class);
     }
 
+    @Override
+    public String getProcessorName() {
+        return "Image Recolorer";
+    }
+
+    @Override
+    public String getProcessorTitle() {
+        return "Image Recolorer";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((palette == null) ? 0 : palette.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ImageRecolorer other = (ImageRecolorer) obj;
+        if (palette == null) {
+            if (other.palette != null)
+                return false;
+        } else if (!palette.equals(other.palette))
+            return false;
+        return true;
+    }
+
     public static Palette builder() {
         return new Palette();
     }
@@ -91,7 +132,6 @@ public class ImageRecolorer implements Processor {
 
         private HashMap<Integer, Integer> colors = new HashMap<>();
 
-        private boolean locked = false;
         private int[] cachedColors = new int[256];
 
         private Palette() {}
@@ -104,9 +144,6 @@ public class ImageRecolorer implements Processor {
          * @return          This palette instance, for chaining
          */
         public Palette putColor(int grey, int colorARGB) {
-            if (locked) {
-                throw new IllegalStateException("Palette is already built");
-            }
             colors.put(grey, colorARGB);
             return this;
         }
@@ -171,9 +208,33 @@ public class ImageRecolorer implements Processor {
          * @return An {@link ImageRecolorer} instance that uses this palette
          */
         public ImageRecolorer build() {
-            this.locked = true;
             this.refreshCache();
             return new ImageRecolorer(this);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((colors == null) ? 0 : colors.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Palette other = (Palette) obj;
+            if (colors == null) {
+                if (other.colors != null)
+                    return false;
+            } else if (!colors.equals(other.colors))
+                return false;
+            return true;
         }
 
     }
@@ -209,6 +270,115 @@ public class ImageRecolorer implements Processor {
             }
             json.add("palette", paletteObject);
             return json;
+        }
+
+    }
+
+    public static class Editor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<ImageRecolorer> {
+
+        @Override
+        public void registerProcessorEditor(Registry registry) {
+            registry.registerEditor(ImageRecolorer.class, this);
+        }
+
+        @Override
+        public void processorEditorLoop(ImageRecolorer processor, Consumer<ImageRecolorer> setter, TerminalMenuContext context) {
+            TerminalMenu menu = new TerminalMenu("Image Recolorer")
+                .autoUppercase()
+                .addKey('-', "Back")
+                .addKey('A', "Add or modify color", () -> {
+                    String greyString = new StringInput("Enter grey value (0-255):")
+                        .scan(context);
+                    int grey;
+                    try {
+                        grey = Integer.parseInt(greyString);
+                        if (grey < 0 || grey > 255) {
+                            throw new NumberFormatException();
+                        }
+                    } catch (NumberFormatException e) {
+                        context.outStream().println(ANSIHelper.red("Invalid grey value: " + greyString));
+                        return;
+                    }
+                    String colorString = new StringInput(processor.palette.colors.containsKey(grey)
+                        ? (
+                            "Enter ARGB color in hex (e.g. FF00FF00 for opaque green) (current: " + Integer.toUnsignedString(processor.palette.colors.get(grey), 16) + "):"
+                            + (ANSIHelper.ansiEnabled()
+                                ? (" " + ANSIHelper.rgbBackground("      ", processor.palette.colors.get(grey)))
+                                : "")
+                        )
+                        : "Enter ARGB color in hex (e.g. FF00FF00 for opaque green):")
+                        .scan(context);
+                    int colorARGB;
+                    try {
+                        colorARGB = Integer.parseUnsignedInt(colorString, 16);
+                    } catch (NumberFormatException e) {
+                        context.outStream().println(ANSIHelper.red("Invalid color value: " + colorString));
+                        return;
+                    }
+                    processor.palette.putColor(grey, colorARGB);
+
+                    processor.palette.refreshCache();
+                })
+                .addKey('D', "Delete color", () -> {
+                    String greyString = new StringInput("Enter grey value to delete (0-255):")
+                        .scan(context);
+                    int grey;
+                    try {
+                        grey = Integer.parseInt(greyString);
+                        if (grey < 0 || grey > 255) {
+                            throw new NumberFormatException();
+                        }
+                    } catch (NumberFormatException e) {
+                        context.outStream().println(ANSIHelper.red("Invalid grey value: " + greyString));
+                        return;
+                    }
+                    Integer i = processor.palette.colors.remove(grey);
+                    if (i == null) {
+                        context.outStream().println(ANSIHelper.red("Grey value " + grey + " is not in the palette"));
+                    }
+                    processor.palette.refreshCache();
+                });
+            while (true) {
+                StringBuilder descStringBuilder = new StringBuilder("Image Recolorer\n");
+
+                for (var entry : processor.palette.colors.entrySet()) {
+                    int gray = entry.getKey();
+                    int color = entry.getValue();
+                    if (ANSIHelper.ansiEnabled()) {
+                        descStringBuilder.append(ANSIHelper.rgbBackground("      ", (gray << 16) | (gray << 8) | gray));
+                    }
+                    descStringBuilder.append(String.format(" %3d -> 0x%08X", gray, color));
+                    if (ANSIHelper.ansiEnabled()) {
+                        descStringBuilder.append(' ');
+                        descStringBuilder.append(ANSIHelper.rgbBackground("      ", color));
+                    }
+                    descStringBuilder.append('\n');
+                }
+
+                descStringBuilder.append('\n');
+
+                // Preview bar, length 52
+                // Use lower half block in palette color
+                // and background color in grey to show the grey value corresponding to the color
+                if (ANSIHelper.ansiEnabled()) {
+                    descStringBuilder.append("Preview:\n");
+                    for (int i = 0; i < 52; i++) {
+                        int grey = i * 255 / 51;
+                        int color = processor.palette.getColor(grey);
+                        descStringBuilder.append(ANSIHelper.rgbWithBackground("\u2584", color, (grey << 16) | (grey << 8) | grey));
+                    }
+                    descStringBuilder.append('\n');
+                }
+
+                menu.updateDescription(descStringBuilder.toString());
+
+                char c = menu.scan(context);
+
+                if (c == '-') {
+                    break;
+                }
+            }
+            setter.accept(processor);
         }
 
     }

@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
-import pelemenguin.texturegen.api.client.AbstractProgressReporter;
+import pelemenguin.texturegen.api.client.ProgressReporter;
 
-public class TerminalProgressReporter extends AbstractProgressReporter {
+public class TerminalProgressReporter extends ProgressReporter {
 
     private HashMap<String, UnaryOperator<String>> formatters = new HashMap<>();
     private HashMap<String, Character> characters = new HashMap<>(); // This should only be modified before loop

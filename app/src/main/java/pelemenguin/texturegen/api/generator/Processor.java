@@ -9,4 +9,12 @@ public interface Processor {
     public List<Class<?>> getInputTypes();
     public List<Class<?>> getOutputTypes();
 
+    public default String getProcessorName() {
+        return this.getClass().getName();
+    }
+
+    public default String getProcessorTitle() {
+        return this.toString();
+    }
+
 }

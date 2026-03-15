@@ -18,7 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import pelemenguin.texturegen.api.client.ProgressReporter;
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.PlainTextProgressReporter;
 import pelemenguin.texturegen.api.client.terminal.TerminalProgressReporter;
 
 public class GenerationExecutor {
@@ -37,26 +39,39 @@ public class GenerationExecutor {
 
     public static ExecutionResult run(Path assetsFolder, Path outputFolder, List<TextureInfo> textureInfos, GeneratorInfo generatorInfo, PrintStream out) {
         String[] fallbacks = generatorInfo.fallbacks;
-        Processor[] processors = generatorInfo.processors;
+        List<Processor> processors = generatorInfo.processors;
         String resultSuffix = generatorInfo.suffix;
 
         List<GenerationError> exceptions = Collections.synchronizedList(new ArrayList<>());
 
         int totalImages = textureInfos.size();
 
-        final TerminalProgressReporter reporter;
-        if (out != null && ANSIHelper.ansiEnabled()) {
-            ANSIHelper.clear(out);
-            // TODO: Keep this todo until we begin window client
-            reporter = new TerminalProgressReporter(System.out);
-            reporter.registerCategory("Succeeded", i -> ANSIHelper.green(String.valueOf(i)), '#');
-            reporter.registerCategory("Failed", i -> ANSIHelper.red(String.valueOf(i)), '!');
-            reporter.registerCategory("Unfound", i -> ANSIHelper.yellow(String.valueOf(i)), '?');
-            reporter.updateTotal(totalImages);
+        final ProgressReporter reporter;
+        if (out != null) {
+            if (ANSIHelper.ansiEnabled()) {
+                ANSIHelper.clear(out);
+                TerminalProgressReporter terminalProgressReporter = new TerminalProgressReporter(out);
+                terminalProgressReporter.registerCategory("Succeeded", i -> ANSIHelper.green(String.valueOf(i)), '#');
+                terminalProgressReporter.registerCategory("Failed", i -> ANSIHelper.red(String.valueOf(i)), '!');
+                terminalProgressReporter.registerCategory("Unfound", i -> ANSIHelper.yellow(String.valueOf(i)), '?');
+                terminalProgressReporter.updateTotal(totalImages);
 
-            reporter.loop(out);
+                terminalProgressReporter.loop(out);
+                reporter = terminalProgressReporter;
+            } else {
+                PlainTextProgressReporter plainTextProgressReporter = new PlainTextProgressReporter();
+                plainTextProgressReporter.registerCategory("Succeeded");
+                plainTextProgressReporter.registerCategory("Failed");
+                plainTextProgressReporter.registerCategory("Unfound");
+
+                plainTextProgressReporter.updateTotal(totalImages);
+                plainTextProgressReporter.loop(out);
+
+                reporter = plainTextProgressReporter;
+            }
         } else {
-            reporter = null;
+            // TODO: maybe we should change to another reporter after window client is implemented
+            reporter = ProgressReporter.newNoOutputReporter();
         }
 
         ExecutorService service = Executors.newVirtualThreadPerTaskExecutor();
@@ -110,7 +125,7 @@ public class GenerationExecutor {
                     BufferedImage image = ImageIO.read(imageFile);
                     image = toARGB(image);
 
-                    BufferedImage result = runSingle(image, context, List.of(processors));
+                    BufferedImage result = runSingle(image, context, processors);
                     Path resultPath = outputFolder.resolve(path.resolveSibling(
                         path.getFileName().toString().replaceFirst("(\\.\\w+)$", resultSuffix == null ? "$1" : ("_" + resultSuffix + "$1"))
                     ));
@@ -172,6 +187,7 @@ public class GenerationExecutor {
 
         BufferedImage converted = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
+        // FIXME: too few types
         switch (image.getType()) {
             case BufferedImage.TYPE_CUSTOM: {
                 Raster originalData = image.getRaster();
