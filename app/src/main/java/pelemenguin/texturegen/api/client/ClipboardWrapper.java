@@ -17,17 +17,7 @@ public interface ClipboardWrapper {
             }
         }
 
-        if (TermuxClipboard.available()) {
-            // 2. Try access system clipboard from Termux API
-            try {
-                TermuxClipboard clipboard = new TermuxClipboard();
-                return clipboard;
-            } catch (Exception e) {
-                // Failed to access system clipboard, fallback to memory clipboard
-            }
-        }
-
-        // 3. Use memory clipboard
+        // 2. Use memory clipboard
         return new MemoryClipboard();
     }
 
