@@ -1,6 +1,5 @@
 package pelemenguin.texturegen.client.terminal;
 
-import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.Set;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
+import pelemenguin.texturegen.api.client.ClipboardWrapper;
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.FieldEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
@@ -38,9 +38,8 @@ public class TerminalClient {
             TerminalMenuContext context = new TerminalMenuContext(
                 System.out,
                 System.in,
-                scanner, 
-                // Get system clipboard
-                Toolkit.getDefaultToolkit().getSystemClipboard()
+                scanner,
+                ClipboardWrapper.getClipboard()
             );
             if (args.workspace == null) {
                 new TerminalMenu("""

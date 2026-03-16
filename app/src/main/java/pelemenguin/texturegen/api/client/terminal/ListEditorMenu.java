@@ -1,8 +1,5 @@
 package pelemenguin.texturegen.api.client.terminal;
 
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Scanner;
@@ -10,6 +7,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import pelemenguin.texturegen.api.client.ClipboardWrapper;
 
 public class ListEditorMenu<E> {
 
@@ -19,8 +18,8 @@ public class ListEditorMenu<E> {
     private String description = null;
     private Consumer<TerminalMenu> extraKeys = t -> {};
     private Function<E, String> strigifier = String::valueOf;
-    private BiConsumer<E, Clipboard> clipboardCopier;
-    private Function<Clipboard, E> clipboardPaster;
+    private BiConsumer<E, ClipboardWrapper> clipboardCopier;
+    private Function<ClipboardWrapper, E> clipboardPaster;
     private int page = 0;
     private boolean immutable = false;
     private boolean selectMode = false;
@@ -62,19 +61,18 @@ public class ListEditorMenu<E> {
         return this;
     }
 
-    public ListEditorMenu<E> copyToClipboard(BiConsumer<E, Clipboard> copier) {
+    public ListEditorMenu<E> copyToClipboard(BiConsumer<E, ClipboardWrapper> copier) {
         this.clipboardCopier = copier;
         return this;
     }
 
     public ListEditorMenu<E> copyToClipboardAsString(Function<E, String> strigifier) {
         return this.copyToClipboard((e, clipboard) -> {
-            StringSelection selection = new StringSelection(strigifier.apply(e));
-            clipboard.setContents(selection, null);
+            clipboard.copyText(strigifier.apply(e));
         });
     }
 
-    public ListEditorMenu<E> pasteFromClipboard(Function<Clipboard, E> paster) {
+    public ListEditorMenu<E> pasteFromClipboard(Function<ClipboardWrapper, E> paster) {
         this.clipboardPaster = paster;
         return this;
     }
@@ -82,7 +80,7 @@ public class ListEditorMenu<E> {
     public ListEditorMenu<E> pasteFromClipboardFromString(Function<String, E> parser) {
         return this.pasteFromClipboard(clipboard -> {
             try {
-                String data = (String) clipboard.getData(DataFlavor.stringFlavor);
+                String data = clipboard.pasteText();
                 return parser.apply(data);
             } catch (Exception e) {
                 return null;
@@ -99,7 +97,7 @@ public class ListEditorMenu<E> {
     private boolean copyMode = false;
     private boolean pasteMode = false;
 
-    public E loop(PrintStream out, Scanner scanner, Clipboard clipboard) {
+    public E loop(PrintStream out, Scanner scanner, ClipboardWrapper clipboard) {
         TerminalMenu menu = new TerminalMenu()
             .autoUppercase();
         E[] resultHolder = (E[]) new Object[1];

@@ -4,6 +4,7 @@ module pelemenguin.texturegen {
     requires java.datatransfer;
 
     exports pelemenguin.texturegen.api.builtin;
+    exports pelemenguin.texturegen.api.client;
     exports pelemenguin.texturegen.api.client.terminal;
     exports pelemenguin.texturegen.api.generator;
     exports pelemenguin.texturegen.api.util;
