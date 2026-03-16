@@ -16,7 +16,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
-import pelemenguin.texturegen.api.client.terminal.ColorSelectorMenu;
+import pelemenguin.texturegen.api.client.terminal.ColorPickerMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -308,7 +308,7 @@ public class ImageRecolorer implements Processor {
                     if (processor.palette.colors.containsKey(grey)) {
                         original = processor.palette.colors.get(grey);
                     }
-                    int colorARGB = new ColorSelectorMenu(original).loop(context).getIntARGB();
+                    int colorARGB = new ColorPickerMenu(original).loop(context).getIntARGB();
                     processor.palette.putColor(grey, colorARGB);
 
                     processor.palette.refreshCache();

@@ -4,6 +4,7 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.util.Objects;
 
 public class AWTClipboard implements ClipboardWrapper {
 
@@ -17,7 +18,7 @@ public class AWTClipboard implements ClipboardWrapper {
     @Override
     public String pasteText() {
         try {
-            return (String) clipboard.getData(DataFlavor.stringFlavor);
+            return Objects.requireNonNullElse((String) clipboard.getData(DataFlavor.stringFlavor), "");
         } catch (Exception e) {
             return "";
         }
