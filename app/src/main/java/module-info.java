@@ -1,3 +1,8 @@
+import pelemenguin.texturegen.api.builtin.AlwaysPassPointFilter;
+import pelemenguin.texturegen.api.builtin.ImageRecolorer;
+import pelemenguin.texturegen.api.generator.Processor;
+import pelemenguin.texturegen.spi.PointFilter;
+
 module pelemenguin.texturegen {
     requires transitive java.desktop;
     requires transitive com.google.gson;
@@ -8,11 +13,14 @@ module pelemenguin.texturegen {
     exports pelemenguin.texturegen.api.client.terminal;
     exports pelemenguin.texturegen.api.generator;
     exports pelemenguin.texturegen.api.util;
+    exports pelemenguin.texturegen.spi;
     exports pelemenguin.texturegen.util;
 
-    provides pelemenguin.texturegen.api.generator.Processor with
-        pelemenguin.texturegen.api.builtin.EveryPointProvider,
-        pelemenguin.texturegen.api.builtin.ImageRecolorer;
+    provides Processor with
+        ImageRecolorer;
 
-    uses pelemenguin.texturegen.api.generator.Processor;
+    provides PointFilter with
+        AlwaysPassPointFilter;
+
+    uses Processor;
 }

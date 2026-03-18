@@ -3,7 +3,6 @@ package pelemenguin.texturegen.client;
 import java.io.File;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
-import pelemenguin.texturegen.api.generator.ProcessorRegistry;
 import pelemenguin.texturegen.client.terminal.TerminalClient;
 
 public class TextureGeneratorClient {
@@ -19,8 +18,6 @@ public class TextureGeneratorClient {
         }
 
         ANSIHelper.clear(System.out);
-
-        ProcessorRegistry.refreshService();
 
         TerminalClient.INSTANCE.run(new TextureGeneratorClient(), commandArgs);
     }

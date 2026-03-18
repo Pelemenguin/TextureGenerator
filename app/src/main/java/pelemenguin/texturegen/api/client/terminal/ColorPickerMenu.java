@@ -388,9 +388,9 @@ public class ColorPickerMenu {
                 double min = Math.min(r, Math.min(g, b));
                 double delta = max - min;
 
-                double h = 0.0;  // 色相（度）
-                double s = 0.0;  // 饱和度 [0,1]
-                double v = max;  // 明度 [0,1]
+                double h = 0.0;
+                double s = 0.0;
+                double v = max;
 
                 if (delta != 0) {
                     s = delta / max;
@@ -406,15 +406,12 @@ public class ColorPickerMenu {
                         h = 60 * ((r - g) / delta + 4);
                     }
                 }
-                // 当 delta == 0 时，s = 0，h 保持为 0（任意值均可，通常取 0）
 
-                // 四舍五入到整数，并处理边界
                 int hInt = (int) Math.round(h);
-                if (hInt == 360) hInt = 0;          // 360° 等价于 0°
+                if (hInt == 360) hInt = 0;
                 int sInt = (int) Math.round(s * 100);
                 int vInt = (int) Math.round(v * 100);
 
-                // 确保在范围内（四舍五入可能产生 101，但极罕见）
                 sInt = Math.max(0, Math.min(100, sInt));
                 vInt = Math.max(0, Math.min(100, vInt));
 

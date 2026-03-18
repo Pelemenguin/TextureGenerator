@@ -12,12 +12,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-import pelemenguin.texturegen.util.ProcessorDeserializer;
-
 public class GeneratorInfo {
 
     public static final Gson GSON = new GsonBuilder()
-        .registerTypeHierarchyAdapter(Processor.class, ProcessorDeserializer.INSTANCE)
+        .registerTypeHierarchyAdapter(Processor.class, Processor.REGISTRY.createDeserializer())
+        .registerTypeHierarchyAdapter(Processor.class, Processor.REGISTRY.createSerializer())
         .setPrettyPrinting()
         .create();
 

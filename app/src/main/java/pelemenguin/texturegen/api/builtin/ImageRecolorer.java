@@ -20,18 +20,14 @@ import pelemenguin.texturegen.api.client.terminal.ColorPickerMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
-import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
 import pelemenguin.texturegen.api.generator.Processor;
-import pelemenguin.texturegen.api.generator.ProcessorInfo;
+import pelemenguin.texturegen.api.util.CommonRegistry;
+import pelemenguin.texturegen.api.util.JsonRegistry;
+import pelemenguin.texturegen.spi.TerminalProcessorEditorProvider;
 
-@ProcessorInfo(
-    value = "texturegen.image_recolorer",
-    deserializer = ImageRecolorer.Serializer.class,
-    serializer = ImageRecolorer.Serializer.class
-)
 public class ImageRecolorer implements Processor {
 
     private Palette palette;
@@ -278,12 +274,17 @@ public class ImageRecolorer implements Processor {
     public static class Editor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<ImageRecolorer> {
 
         @Override
-        public void registerProcessorEditor(Registry registry) {
-            registry.registerEditor(ImageRecolorer.class, this);
+        public void register(CommonRegistry<TerminalProcessorEditorProvider> registry) {
+            registry.register("texturegen.image_recolorer", this);
         }
 
         @Override
-        public void processorEditorLoop(ImageRecolorer processor, Consumer<ImageRecolorer> setter, TerminalMenuContext context) {
+        public pelemenguin.texturegen.spi.TerminalProcessorEditorProvider.Editor<? extends Processor> getEditor() {
+            return this;
+        }
+
+        @Override
+        public void editorLoop(ImageRecolorer processor, Consumer<ImageRecolorer> setter, TerminalMenuContext context) {
             TerminalMenu menu = new TerminalMenu("Image Recolorer")
                 .autoUppercase()
                 .addKey('-', "Back")
@@ -379,6 +380,11 @@ public class ImageRecolorer implements Processor {
             setter.accept(processor);
         }
 
+    }
+
+    @Override
+    public void register(JsonRegistry<Processor> registry) {
+        registry.register("texturegen.image_recolorer", ImageRecolorer.class, new Serializer());
     }
 
 }

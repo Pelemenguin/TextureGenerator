@@ -6,10 +6,9 @@ import java.util.function.Consumer;
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
-import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
 import pelemenguin.texturegen.api.generator.Processor;
-import pelemenguin.texturegen.api.generator.ProcessorRegistry;
+import pelemenguin.texturegen.spi.TerminalProcessorEditorProvider;
 
 public class ProcessorSequenceMenu {
 
@@ -27,12 +26,12 @@ public class ProcessorSequenceMenu {
     }
 
     private static void create(Consumer<Processor> setter, TerminalMenuContext context) {
-        List<String> processors = List.copyOf(ProcessorRegistry.getRegisteredProcessorIds());
+        List<String> processors = List.copyOf(Processor.REGISTRY.getRegisteredIds());
         ListEditorMenu<String> processorSelector = new ListEditorMenu<>(processors)
             .description("Select a processor to add:");
         String selected = processorSelector.loop(context);
         if (selected != null) {
-            Class<? extends Processor> processorClass = ProcessorRegistry.getProcessorClass(selected);
+            Class<? extends Processor> processorClass = Processor.REGISTRY.getClassOf(selected);
             try {
                 Processor processor = processorClass.getDeclaredConstructor().newInstance();
                 setter.accept(processor); // In case editor not found, for example a simple processor with no editable properties,
@@ -46,13 +45,14 @@ public class ProcessorSequenceMenu {
     }
 
     public static void edit(Processor original, Consumer<Processor> setter, TerminalMenuContext context) {
+        String id = Processor.REGISTRY.getIdOf(original.getClass());
         TerminalProcessorEditorProvider.Editor<Processor> editor =
-            (TerminalProcessorEditorProvider.Editor<Processor>) TerminalProcessorEditorProvider.getEditorFor(original.getClass());
+            (TerminalProcessorEditorProvider.Editor<Processor>) TerminalProcessorEditorProvider.REGISTRY.get(id);
         if (editor == null) {
-            context.outStream().println(ANSIHelper.red("No editor found for processor of type " + original.getClass().getName()));
+            context.outStream().println(ANSIHelper.red("No editor found for processor of processor " + id));
             return;
         }
-        editor.processorEditorLoop(original, setter, context);
+        editor.editorLoop(original, setter, context);
     }
 
 }
