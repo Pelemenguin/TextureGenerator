@@ -20,13 +20,13 @@ import pelemenguin.texturegen.api.client.terminal.ColorPickerMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
+import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
 import pelemenguin.texturegen.api.generator.Processor;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 import pelemenguin.texturegen.api.util.JsonRegistry;
-import pelemenguin.texturegen.spi.TerminalProcessorEditorProvider;
 
 public class ImageRecolorer implements Processor {
 
@@ -279,7 +279,7 @@ public class ImageRecolorer implements Processor {
         }
 
         @Override
-        public pelemenguin.texturegen.spi.TerminalProcessorEditorProvider.Editor<? extends Processor> getEditor() {
+        public pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider.Editor<? extends Processor> getEditor() {
             return this;
         }
 

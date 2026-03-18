@@ -6,9 +6,9 @@ import java.util.function.Consumer;
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
+import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GeneratorInfo;
 import pelemenguin.texturegen.api.generator.Processor;
-import pelemenguin.texturegen.spi.TerminalProcessorEditorProvider;
 
 public class ProcessorSequenceMenu {
 

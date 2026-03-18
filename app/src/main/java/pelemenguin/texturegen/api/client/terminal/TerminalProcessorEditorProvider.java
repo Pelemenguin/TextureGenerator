@@ -1,8 +1,7 @@
-package pelemenguin.texturegen.spi;
+package pelemenguin.texturegen.api.client.terminal;
 
 import java.util.function.Consumer;
 
-import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.generator.Processor;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 
