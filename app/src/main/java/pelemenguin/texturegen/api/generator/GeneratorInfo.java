@@ -8,17 +8,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
 public class GeneratorInfo {
 
-    public static final Gson GSON = new GsonBuilder()
-        .registerTypeHierarchyAdapter(Processor.class, Processor.REGISTRY.createDeserializer())
-        .registerTypeHierarchyAdapter(Processor.class, Processor.REGISTRY.createSerializer())
-        .setPrettyPrinting()
-        .create();
+    public static final Gson GSON = Processor.GSON;
 
     public String suffix;
     public List<String> fallbacks = new ArrayList<>();

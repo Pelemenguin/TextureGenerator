@@ -5,13 +5,22 @@ import java.util.List;
 import com.google.gson.Gson;
 
 import pelemenguin.texturegen.api.util.JsonRegistry;
+import pelemenguin.texturegen.api.util.PointFilter;
 
 public interface Processor extends JsonRegistry.Registrable<Processor> {
 
     public static final JsonRegistry<Processor> REGISTRY = new JsonRegistry<>(Processor.class);
-    public static final Gson GSON = REGISTRY.createGson();
+    public static final Gson GSON = REGISTRY.createGsonBuilder()
+        .registerTypeAdapterFactory(PointFilter.TYPE_ADAPTER)
+        .setPrettyPrinting()
+        .create();
 
     public void process(GenerationContext context, GenerationExecutor.Parameter parameters, GenerationExecutor.Result result);
+
+    @Override
+    default void register(JsonRegistry<Processor> registry) {
+        
+    }
 
     public List<Class<?>> getInputTypes();
     public List<Class<?>> getOutputTypes();

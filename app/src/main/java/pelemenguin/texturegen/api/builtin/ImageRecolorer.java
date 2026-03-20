@@ -1,19 +1,14 @@
 package pelemenguin.texturegen.api.builtin;
 
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Type;
+import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.ColorPickerMenu;
@@ -27,10 +22,12 @@ import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
 import pelemenguin.texturegen.api.generator.Processor;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 import pelemenguin.texturegen.api.util.JsonRegistry;
+import pelemenguin.texturegen.api.util.PointFilter;
 
 public class ImageRecolorer implements Processor {
 
     private Palette palette;
+    private PointFilter filter = PointFilter.alwaysPass();
 
     /**
      * Constructs an {@link ImageRecolorer} with a default palette that maps 0 to black and 255 to white, and linearly interpolates in between.
@@ -52,27 +49,25 @@ public class ImageRecolorer implements Processor {
     @Override
     public void process(GenerationContext context, Parameter parameters, Result result) {
         BufferedImage image = parameters.load(0, BufferedImage.class);
-        int width = image.getWidth();
-        int height = image.getHeight();
         // Just modify the original image
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int color = image.getRGB(x, y);
-                // Skip if not grey
-                int r = (color >> 16) & 0xFF;
-                int g = (color >> 8) & 0xFF;
-                int b = color & 0xFF;
-                if (r != g || g != b) {
-                    continue;
-                }
-                // Skip if transparent
-                int a = (color >> 24) & 0xFF;
-                if (a == 0) {
-                    continue;
-                }
-                image.setRGB(x, y, this.palette.getColor(r));
+        this.filter.forEachPixel(image, point -> {
+            int x = point.x();
+            int y = point.y();
+            int color = image.getRGB(x, y);
+            // Skip if transparent
+            int a = (color >> 24) & 0xFF;
+            if (a == 0) {
+                return;
             }
-        }
+            // Skip if not grey
+            int r = (color >> 16) & 0xFF;
+            int g = (color >> 8) & 0xFF;
+            int b = color & 0xFF;
+            if (r != g || g != b) {
+                return;
+            }
+            image.setRGB(x, y, this.palette.getColor(r));
+        });
         result.push(0, image);
     }
 
@@ -236,37 +231,53 @@ public class ImageRecolorer implements Processor {
 
     }
 
-    public static class Serializer implements JsonDeserializer<ImageRecolorer>, JsonSerializer<ImageRecolorer> {
+    @Override
+    public void register(JsonRegistry<Processor> registry) {
+        registry.register("texturegen.image_recolorer", ImageRecolorer.class, new Adapter());
+    }
+
+    public static class Adapter extends TypeAdapter<ImageRecolorer> {
 
         @Override
-        public ImageRecolorer deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-                throws JsonParseException {
-            if (json.isJsonObject()) {
-                ImageRecolorer.Palette palette = new ImageRecolorer.Palette();
-                JsonObject paletteObject = json.getAsJsonObject().getAsJsonObject("palette");
-                if (paletteObject == null) {
-                    throw new JsonParseException("ImageRecolorer processor data must contain a 'palette' field");
-                }
-                paletteObject.entrySet().forEach(entry -> {
-                    int grey = Integer.parseInt(entry.getKey());
-                    int colorARGB = Integer.parseUnsignedInt(entry.getValue().getAsString(), 16);
-                    palette.putColor(grey, colorARGB);
-                });
-                return palette.build();
-            } else {
-                throw new JsonParseException("ImageRecolorer processor data must be a JSON object");
+        public void write(JsonWriter out, ImageRecolorer value) throws IOException {
+            out.beginObject();
+            out.name("palette");
+            out.beginObject();
+            for (var entry : value.palette.colors.entrySet()) {
+                out.name(Integer.toString(entry.getKey())).value(String.format("%08X", entry.getValue()));
             }
+            out.endObject();
+            out.name("filter");
+            PointFilter.GSON.toJson(value.filter, PointFilter.class, out);
+            out.endObject();
         }
 
         @Override
-        public JsonElement serialize(ImageRecolorer src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonObject json = new JsonObject();
-            JsonObject paletteObject = new JsonObject();
-            for (Map.Entry<Integer, Integer> entry : src.palette.colors.entrySet()) {
-                paletteObject.addProperty(entry.getKey().toString(), Integer.toUnsignedString(entry.getValue(), 16));
+        public ImageRecolorer read(JsonReader in) throws IOException {
+            Palette palette = ImageRecolorer.builder();
+            PointFilter filter = null;
+            in.beginObject();
+            while (in.hasNext()) {
+                String name = in.nextName();
+                if (name.equals("palette")) {
+                    in.beginObject();
+                    while (in.hasNext()) {
+                        String greyString = in.nextName();
+                        int grey = Integer.parseInt(greyString);
+                        int colorARGB = Integer.parseUnsignedInt(in.nextString(), 16);
+                        palette.putColor(grey, colorARGB);
+                    }
+                    in.endObject();
+                } else if (name.equals("filter")) {
+                    filter = PointFilter.GSON.fromJson(in, PointFilter.class);
+                } else {
+                    in.skipValue();
+                }
             }
-            json.add("palette", paletteObject);
-            return json;
+            in.endObject();
+            ImageRecolorer result = palette.build();
+            result.filter = filter == null ? PointFilter.alwaysPass() : filter;
+            return result;
         }
 
     }
@@ -380,11 +391,6 @@ public class ImageRecolorer implements Processor {
             setter.accept(processor);
         }
 
-    }
-
-    @Override
-    public void register(JsonRegistry<Processor> registry) {
-        registry.register("texturegen.image_recolorer", ImageRecolorer.class, new Serializer());
     }
 
 }

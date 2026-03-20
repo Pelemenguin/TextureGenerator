@@ -1,27 +1,30 @@
 package pelemenguin.texturegen.api.util;
 
-import java.lang.reflect.Type;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 
 public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
 
     private Class<R> baseType;
+    private String typeField = "type";
+    private boolean allowNull = false;
     private HashMap<String, Class<? extends R>> typeRegistry = new HashMap<>();
     private HashMap<Class<? extends R>, String> inversedTypeRegistry = new HashMap<>();
-    private HashMap<String, JsonSerializer<? extends R>> serializers = new HashMap<>();
-    private HashMap<String, JsonDeserializer<? extends R>> deserializers = new HashMap<>();
+    private HashMap<Class<? extends R>, TypeAdapter<? extends R>> typeAdapters = new HashMap<>();
 
     private boolean loaded = false;
 
@@ -29,19 +32,14 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         this.baseType = baseType;
     }
 
-    public synchronized <E extends R> void register(String id, Class<E> type, JsonSerializer<E> serializer, JsonDeserializer<E> deserializer) {
+    public synchronized <E extends R> void register(String id, Class<E> type, TypeAdapter<E> typeAdapter) {
         typeRegistry.put(id, type);
         inversedTypeRegistry.put(type, id);
-        serializers.put(id, serializer);
-        deserializers.put(id, deserializer);
-    }
-
-    public <E extends R, T extends JsonSerializer<E> & JsonDeserializer<E>> void register(String id, Class<E> type, T serializerDeserializer) {
-        register(id, type, serializerDeserializer, serializerDeserializer);
+        typeAdapters.put(type, typeAdapter);
     }
 
     public <E extends R> void register(String id, Class<E> type) {
-        register(id, type, null, null);
+        register(id, type, null);
     }
 
     public Set<String> getRegisteredIds() {
@@ -58,15 +56,14 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         ensureServiceLoaded();
         return inversedTypeRegistry.get(type);
     }
-
-    public JsonSerializer<? extends R> getSerializer(String id) {
+    
+    public TypeAdapter<? extends R> getTypeAdapter(String id) {
         ensureServiceLoaded();
-        return serializers.get(id);
-    }
-
-    public JsonDeserializer<? extends R> getDeserializer(String id) {
-        ensureServiceLoaded();
-        return deserializers.get(id);
+        var type = typeRegistry.get(id);
+        if (type == null) {
+            return null;
+        }
+        return typeAdapters.get(type);
     }
 
     public synchronized void ensureServiceLoaded() {
@@ -85,8 +82,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         // Clear previous registries
         typeRegistry.clear();
         inversedTypeRegistry.clear();
-        serializers.clear();
-        deserializers.clear();
+        typeAdapters.clear();
         for (R entry : loader) {
             try {
                 entry.register(this);
@@ -96,17 +92,22 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         }
     }
 
-    public JsonSerializer<R> createSerializer() {
-        return new Serializer();
+    public synchronized JsonRegistry<R> setTypeField(String field) {
+        this.typeField = field;
+        return this;
     }
 
-    public JsonDeserializer<R> createDeserializer() {
-        return new Deserializer();
+    public synchronized JsonRegistry<R> allowNull() {
+        this.allowNull = true;
+        return this;
+    }
+
+    public TypeAdapterFactory createTypeAdapterFactory() {
+        return new RegistryTypeAdapterFactory<>(this);
     }
 
     public GsonBuilder addToGsonBuilder(GsonBuilder builder) {
-        builder.registerTypeAdapter(baseType, createSerializer());
-        builder.registerTypeAdapter(baseType, createDeserializer());
+        builder.registerTypeAdapterFactory(createTypeAdapterFactory());
         return builder;
     }
     
@@ -122,75 +123,90 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         public void register(JsonRegistry<R> registry);
     }
 
-    private class Serializer implements JsonSerializer<R> {
+    private static class RegistryTypeAdapterFactory<R extends JsonRegistry.Registrable<R>> implements TypeAdapterFactory {
 
-        @Override
-        public JsonElement serialize(R src, Type typeOfSrc, JsonSerializationContext context) {
-            ensureServiceLoaded();
-            var typeId = inversedTypeRegistry.get(src.getClass());
-            if (typeId == null) {
-                throw new JsonParseException("Unknown type: " + src.getClass().getName());
-            }
-            @SuppressWarnings("unchecked")
-            var serializer = (JsonSerializer<R>) serializers.get(typeId);
+        private JsonRegistry<R> registry;
 
-            JsonObject result;
-            if (serializer == null) {
-                // Use default serializer provided by GSON
-                try {
-                    result = context.serialize(src).getAsJsonObject();
-                } catch (Throwable e) {
-                    throw new JsonParseException("Serialization failed for type: " + typeId, e);
-                }
-            } else {
-                try {
-                    result = serializer.serialize(src, typeOfSrc, context).getAsJsonObject();
-                } catch (Throwable e) {
-                    throw new JsonParseException("Serialization failed for type: " + typeId, e);
-                }
-            }
-
-            result.addProperty("type", typeId);
-            return result;
+        private RegistryTypeAdapterFactory(JsonRegistry<R> registry) {
+            this.registry = registry;
         }
 
-    }
-
-    private class Deserializer implements JsonDeserializer<R> {
-
         @Override
-        public R deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
-            ensureServiceLoaded();
-            if (!json.isJsonObject()) {
-                throw new JsonParseException("Expected JSON object");
-            }
-            var jsonObject = json.getAsJsonObject();
-            var typeElement = jsonObject.get("type");
-            if (typeElement == null || !typeElement.isJsonPrimitive() || !typeElement.getAsJsonPrimitive().isString()) {
-                throw new JsonParseException("Expected 'type' field of type string");
-            }
-            var typeId = typeElement.getAsString();
-            var deserializer = deserializers.get(typeId);
-
-            R result;
-            if (deserializer == null) {
-                // Use default serializer provided by GSON
-                var typeClass = typeRegistry.get(typeId);
-                if (typeClass == null) {
-                    throw new JsonParseException("Unknown type: " + typeId);
-                }
-                result = context.deserialize(json, typeClass);
-            } else {
-                try {
-                    result = deserializer.deserialize(json, typeOfT, context);
-                } catch (Throwable e) {
-                    throw new JsonParseException("Deserialization failed for type: " + typeId, e);
-                }
+        @SuppressWarnings("unchecked")
+        public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+            if (!registry.baseType.isAssignableFrom(type.getRawType())) {
+                return null;
             }
 
-            return result;
+            String typeFieldName = registry.typeField;
+            boolean allowNull = registry.allowNull;
+
+            return new TypeAdapter<T>() {
+
+                @Override
+                public void write(JsonWriter out, T value) throws IOException {
+                    registry.ensureServiceLoaded();
+
+                    if (value == null) {
+                        if (!allowNull) {
+                            throw new JsonParseException("Null value is not allowed for type: " + type.getRawType().getName());
+                        }
+                        out.nullValue();
+                        return;
+                    }
+
+                    Class<? extends R> clazz = (Class<? extends R>) value.getClass();
+                    String id = registry.getIdOf(clazz);
+                    if (id == null) {
+                        throw new JsonParseException("Unregistered type: " + clazz.getName());
+                    }
+                    TypeAdapter<R> typeAdapter = (TypeAdapter<R>) registry.getTypeAdapter(id);
+                    if (typeAdapter == null) {
+                        typeAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(RegistryTypeAdapterFactory.this, TypeToken.get(clazz));
+                    }
+                    JsonObject jsonObject;
+                    try {
+                        jsonObject = typeAdapter.toJsonTree((R) value).getAsJsonObject();
+                    } catch (IllegalStateException e) {
+                        throw new JsonParseException("Failed to serialize type: " + clazz.getName() + ", the result JsonElement is not an object", e);
+                    }
+                    jsonObject.addProperty(typeFieldName, id);
+                    gson.toJson(jsonObject, out);
+                }
+
+                @Override
+                public T read(JsonReader in) throws IOException {
+                    registry.ensureServiceLoaded();
+
+                    if (in.peek() == JsonToken.NULL) {
+                        if (!allowNull) {
+                            throw new JsonParseException("Null value is not allowed for type: " + type.getRawType().getName());
+                        }
+                        in.nextNull();
+                        return null;
+                    }
+
+                    JsonObject jsonObject = gson.fromJson(in, JsonObject.class);
+                    JsonElement typeElement = jsonObject.get(typeFieldName);
+                    if (typeElement == null) {
+                        throw new JsonParseException("Missing type field: " + typeFieldName);
+                    }
+                    String id = typeElement.getAsString();
+                    Class<? extends R> clazz = registry.getClassOf(id);
+                    if (clazz == null) {
+                        throw new JsonParseException("Unknown type id: " + id);
+                    }
+                    TypeAdapter<R> typeAdapter = (TypeAdapter<R>) registry.getTypeAdapter(id);
+                    if (typeAdapter != null) {
+                        return (T) typeAdapter.fromJsonTree(jsonObject);
+                    } else {
+                        TypeAdapter<R> delegateAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(RegistryTypeAdapterFactory.this, TypeToken.get(clazz));
+                        return (T) delegateAdapter.fromJsonTree(jsonObject);
+                    }
+                }
+
+            };
         }
-
     }
 
 }
