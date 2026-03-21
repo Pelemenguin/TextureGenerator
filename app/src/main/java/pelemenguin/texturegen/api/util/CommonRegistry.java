@@ -1,6 +1,7 @@
 package pelemenguin.texturegen.api.util;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -9,7 +10,7 @@ public class CommonRegistry<R extends CommonRegistry.Registrable<R>> {
 
     private Class<R> baseType;
     private BiConsumer<CommonRegistry<R>, R> extraRegistryAction;
-    private HashMap<String, R> registry = new HashMap<>();
+    private LinkedHashMap<String, R> registry = new LinkedHashMap<>();
     private HashMap<R, String> inversedRegistry = new HashMap<>();
 
     private boolean loaded = false;

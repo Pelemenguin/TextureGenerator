@@ -2,6 +2,7 @@ package pelemenguin.texturegen.api.util;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -24,7 +25,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
     private BiConsumer<JsonRegistry<R>, R> extraRegistryAction;
     private String typeField = "type";
     private boolean allowNull = false;
-    private HashMap<String, Class<? extends R>> typeRegistry = new HashMap<>();
+    private LinkedHashMap<String, Class<? extends R>> typeRegistry = new LinkedHashMap<>();
     private HashMap<Class<? extends R>, String> inversedTypeRegistry = new HashMap<>();
     private HashMap<Class<? extends R>, TypeAdapter<? extends R>> typeAdapters = new HashMap<>();
 
