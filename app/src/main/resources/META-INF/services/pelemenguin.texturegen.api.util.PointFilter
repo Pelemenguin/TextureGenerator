@@ -3,3 +3,6 @@ pelemenguin.texturegen.api.util.PointFilter$AlwaysFail
 pelemenguin.texturegen.api.util.PointFilter$And
 pelemenguin.texturegen.api.util.PointFilter$Or
 pelemenguin.texturegen.api.util.PointFilter$Not
+pelemenguin.texturegen.api.builtin.HSVPointFilter$Hue
+pelemenguin.texturegen.api.builtin.HSVPointFilter$Saturation
+pelemenguin.texturegen.api.builtin.HSVPointFilter$Value

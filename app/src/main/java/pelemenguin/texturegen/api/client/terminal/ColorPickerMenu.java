@@ -4,6 +4,8 @@ import java.io.PrintStream;
 import java.util.Scanner;
 import java.util.function.IntConsumer;
 
+import pelemenguin.texturegen.api.util.ColorHelper;
+
 public class ColorPickerMenu {
 
     private int[] rgba = new int[4];
@@ -163,9 +165,9 @@ public class ColorPickerMenu {
         for (int i = 0; i < 52; i++) {
             int threshold = i * max / 51;
             int backgroundColor = switch (hOrSOrV) {
-                case 'H' -> hsvToRgb(threshold * 360 / max, 100, 100);
-                case 'S' -> hsvToRgb(this.hsva[0], threshold * 100 / max, this.hsva[2]);
-                case 'V' -> hsvToRgb(this.hsva[0], this.hsva[1], threshold * 100 / max);
+                case 'H' -> ColorHelper.hsvToRgb(threshold * 360 / max, 100, 100);
+                case 'S' -> ColorHelper.hsvToRgb(this.hsva[0], threshold * 100 / max, this.hsva[2]);
+                case 'V' -> ColorHelper.hsvToRgb(this.hsva[0], this.hsva[1], threshold * 100 / max);
                 default -> 0x000000;
             };
             if (!metCurrent && currentValue <= threshold) {
@@ -316,108 +318,11 @@ public class ColorPickerMenu {
         return hsva.clone();
     }
 
-    private int hsvToRgb(int h, int s, int v) {
-        double hue = (h % 360) / 360.0;
-        double saturation = Math.max(0, Math.min(100, s)) / 100.0;
-        double value = Math.max(0, Math.min(100, v)) / 100.0;
-
-        int r, g, b;
-
-        if (saturation == 0) {
-            // 灰色
-            r = g = b = (int) Math.round(value * 255);
-        } else {
-            double hi = Math.floor(hue * 6);
-            double f = hue * 6 - hi;
-            double p = value * (1 - saturation);
-            double q = value * (1 - f * saturation);
-            double t = value * (1 - (1 - f) * saturation);
-
-            int region = (int) hi % 6;
-            switch (region) {
-                case 0:
-                    r = (int) Math.round(value * 255);
-                    g = (int) Math.round(t * 255);
-                    b = (int) Math.round(p * 255);
-                    break;
-                case 1:
-                    r = (int) Math.round(q * 255);
-                    g = (int) Math.round(value * 255);
-                    b = (int) Math.round(p * 255);
-                    break;
-                case 2:
-                    r = (int) Math.round(p * 255);
-                    g = (int) Math.round(value * 255);
-                    b = (int) Math.round(t * 255);
-                    break;
-                case 3:
-                    r = (int) Math.round(p * 255);
-                    g = (int) Math.round(q * 255);
-                    b = (int) Math.round(value * 255);
-                    break;
-                case 4:
-                    r = (int) Math.round(t * 255);
-                    g = (int) Math.round(p * 255);
-                    b = (int) Math.round(value * 255);
-                    break;
-                case 5:
-                default:
-                    r = (int) Math.round(value * 255);
-                    g = (int) Math.round(p * 255);
-                    b = (int) Math.round(q * 255);
-                    break;
-            }
-        }
-
-        r = Math.max(0, Math.min(255, r));
-        g = Math.max(0, Math.min(255, g));
-        b = Math.max(0, Math.min(255, b));
-
-        return (r << 16) | (g << 8) | b;
-    }
-
     private void syncColors(int sourceMode) {
         switch (sourceMode) {
             case MODE_RGBA: {
                 // Update this.hsva from this.rgba
-                double r = Math.max(0, Math.min(255, this.rgba[0])) / 255.0;
-                double g = Math.max(0, Math.min(255, this.rgba[1])) / 255.0;
-                double b = Math.max(0, Math.min(255, this.rgba[2])) / 255.0;
-
-                double max = Math.max(r, Math.max(g, b));
-                double min = Math.min(r, Math.min(g, b));
-                double delta = max - min;
-
-                double h = 0.0;
-                double s = 0.0;
-                double v = max;
-
-                if (delta != 0) {
-                    s = delta / max;
-
-                    if (max == r) {
-                        h = 60 * ((g - b) / delta);
-                        if (g < b) {
-                            h += 360;
-                        }
-                    } else if (max == g) {
-                        h = 60 * ((b - r) / delta + 2);
-                    } else { // max == b
-                        h = 60 * ((r - g) / delta + 4);
-                    }
-                }
-
-                int hInt = (int) Math.round(h);
-                if (hInt == 360) hInt = 0;
-                int sInt = (int) Math.round(s * 100);
-                int vInt = (int) Math.round(v * 100);
-
-                sInt = Math.max(0, Math.min(100, sInt));
-                vInt = Math.max(0, Math.min(100, vInt));
-
-                this.hsva[0] = hInt;
-                this.hsva[1] = sInt;
-                this.hsva[2] = vInt;
+                ColorHelper.rgbToHsv(this.rgba[0], this.rgba[1], this.rgba[2], this.hsva);
                 this.hsva[3] = this.rgba[3];
                 break;
             }
@@ -426,7 +331,7 @@ public class ColorPickerMenu {
                 int h = this.hsva[0];
                 int s = this.hsva[1];
                 int v = this.hsva[2];
-                int rgb = hsvToRgb(h, s, v);
+                int rgb = ColorHelper.hsvToRgb(h, s, v);
                 this.rgba[0] = (rgb >> 16) & 0xFF;
                 this.rgba[1] = (rgb >> 8) & 0xFF;
                 this.rgba[2] = rgb & 0xFF;
