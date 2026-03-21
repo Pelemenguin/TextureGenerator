@@ -4,7 +4,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
@@ -14,14 +17,31 @@ import com.google.gson.TypeAdapterFactory;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
+import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
+import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
+import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
+
 public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
-    
-    public static final JsonRegistry<PointFilter> REGISTRY = new JsonRegistry<>(PointFilter.class);
+
+    public static final JsonRegistry<PointFilter> REGISTRY = new JsonRegistry<>(PointFilter.class, (registry, filter) -> {
+        PrivateObjectHolder.ID_TO_NAME.put(registry.getIdOf(filter.getClass()), filter.getPointFilterName());
+    });
+    // public static final JsonRegistry<PointFilter> REGISTRY = new JsonRegistry<>(PointFilter.class);
     public static final TypeAdapterFactory TYPE_ADAPTER = REGISTRY.createTypeAdapterFactory();
     public static final Gson GSON = REGISTRY.createGsonBuilder()
         .registerTypeAdapterFactory(TYPE_ADAPTER)
         .setPrettyPrinting()
         .create();
+
+    public static class PrivateObjectHolder {
+        private static final HashMap<String, String> ID_TO_NAME = new HashMap<>();
+    }
+
+    public static String getNameFor(String processorId) {
+        return PrivateObjectHolder.ID_TO_NAME.get(processorId);
+    }
 
     /**
      * Filters the points of the given image and writes the result to the given {@code maskResult} image.
@@ -36,6 +56,14 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
      *                   All pixels in this image are initially black (0) and should be modified to white (1) for points that pass the filter.
      */
     void filter(BufferedImage image, BufferedImage maskResult);
+
+    public default String getPointFilterName() {
+        return REGISTRY.getIdOf(this.getClass());
+    }
+
+    public default String getPointFilterTitle() {
+        return this.toString();
+    }
 
     public default BufferedImage filter(BufferedImage image) {
         BufferedImage maskResult = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
@@ -106,13 +134,13 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
 
     public static And and(PointFilter... filters) {
         And and = new And();
-        and.filters = filters.clone();
+        and.filters = List.of(filters);
         return and;
     }
 
     public static Or or(PointFilter... filters) {
         Or or = new Or();
-        or.filters = filters.clone();
+        or.filters = List.of(filters);
         return or;
     }
 
@@ -188,6 +216,16 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
             };
         }
 
+        @Override
+        public String getPointFilterName() {
+            return "Always Pass";
+        }
+        
+        @Override
+        public String toString() {
+            return "Always Pass";
+        }
+
     }
 
     public static class AlwaysFail implements PointFilter {
@@ -235,11 +273,21 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
             };
         }
 
+        @Override
+        public String getPointFilterName() {
+            return "Always Fail";
+        }
+
+        @Override
+        public String toString() {
+            return "Always Fail";
+        }
+
     }
 
     public static class And implements PointFilter {
 
-        private PointFilter[] filters = new PointFilter[0];
+        private List<PointFilter> filters = new ArrayList<>();
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
@@ -248,14 +296,14 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
 
         @Override
         public void filter(BufferedImage image, BufferedImage maskResult) {
-            if (filters.length == 0) {
+            if (filters.size() == 0) {
                 // If there are no filters, pass all points
                 AlwaysPass.INSTANCE.filter(image, maskResult);
                 return;
             }
-            Raster[] masks = new Raster[filters.length];
-            for (int i = 0; i < filters.length; i++) {
-                BufferedImage mask = filters[i].filter(image);
+            Raster[] masks = new Raster[filters.size()];
+            for (int i = 0; i < filters.size(); i++) {
+                BufferedImage mask = filters.get(i).filter(image);
                 masks[i] = mask.getData();
             }
             WritableRaster raster = maskResult.getRaster();
@@ -275,11 +323,54 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
             }
         }
 
+        @Override
+        public String getPointFilterName() {
+            return "And";
+        }
+
+        @Override
+        public String getPointFilterTitle() {
+            return "And (%d filters)".formatted(filters.size());
+        }
+
+        @Override
+        public String toString() {
+            return "And" + this.filters;
+        }
+
+        public static class TerminalEditor implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<And> {
+
+            @Override
+            public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
+                registry.register("texturegen.and", this);
+            }
+
+            @Override
+            public void editorLoop(And pointFilter, Consumer<And> setter, TerminalMenuContext context) {
+                ListEditorMenu<PointFilter> editor = new ListEditorMenu<>(pointFilter.filters, (filter, filterSetter) -> {
+                    if (filter == null) {
+                        TerminalPointFilterEditorProvider.getSelectionList(filterSetter, context).run();
+                    } else {
+                        TerminalPointFilterEditorProvider.getEditorLoop(filter, filterSetter, context).run();
+                    }
+                })
+                    .strigifier(PointFilter::getPointFilterTitle)
+                    .description("Edit filters for And point filter:");
+                editor.loop(context);
+            }
+
+            @Override
+            public Editor<? extends PointFilter> getEditor() {
+                return this;
+            }
+
+        }
+
     }
 
     public static class Or implements PointFilter {
 
-        private PointFilter[] filters = new PointFilter[0];
+        private List<PointFilter> filters = new ArrayList<>();
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
@@ -288,14 +379,14 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
 
         @Override
         public void filter(BufferedImage image, BufferedImage maskResult) {
-            if (filters.length == 0) {
+            if (filters.size() == 0) {
                 // If there are no filters, fail all points
                 AlwaysFail.INSTANCE.filter(image, maskResult);
                 return;
             }
-            Raster[] masks = new Raster[filters.length];
-            for (int i = 0; i < filters.length; i++) {
-                BufferedImage mask = filters[i].filter(image);
+            Raster[] masks = new Raster[filters.size()];
+            for (int i = 0; i < filters.size(); i++) {
+                BufferedImage mask = filters.get(i).filter(image);
                 masks[i] = mask.getData();
             }
             WritableRaster raster = maskResult.getRaster();
@@ -315,11 +406,54 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
             }
         }
 
+        @Override
+        public String getPointFilterName() {
+            return "Or";
+        }
+
+        @Override
+        public String getPointFilterTitle() {
+            return "Or (%d filters)".formatted(filters.size());
+        }
+
+        @Override
+        public String toString() {
+            return "Or" + filters;
+        }
+
+        public static class TerminalEditor implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<Or> {
+
+            @Override
+            public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
+                registry.register("texturegen.or", this);
+            }
+
+            @Override
+            public void editorLoop(Or pointFilter, Consumer<Or> setter, TerminalMenuContext context) {
+                ListEditorMenu<PointFilter> editor = new ListEditorMenu<>(pointFilter.filters, (filter, filterSetter) -> {
+                    if (filter == null) {
+                        TerminalPointFilterEditorProvider.getSelectionList(filterSetter, context).run();
+                    } else {
+                        TerminalPointFilterEditorProvider.getEditorLoop(filter, filterSetter, context).run();
+                    }
+                })
+                    .strigifier(PointFilter::getPointFilterTitle)
+                    .description("Edit filters for Or point filter:");
+                editor.loop(context);
+            }
+
+            @Override
+            public Editor<? extends PointFilter> getEditor() {
+                return this;
+            }
+
+        }
+
     }
 
     public static class Not implements PointFilter {
 
-        PointFilter filter;
+        PointFilter filter = AlwaysPass.INSTANCE;
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
@@ -341,6 +475,67 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
                     raster.setSample(x, y, 0, 1 - mask.getSample(x, y, 0));
                 }
             }
+        }
+
+        @Override
+        public String getPointFilterName() {
+            return "Not";
+        }
+
+        @Override
+        public String getPointFilterTitle() {
+            return "Not (%s)".formatted(filter == null ? "null" : filter.getPointFilterTitle());
+        }
+
+        @Override
+        public String toString() {
+            return "Not(" + filter + ")";
+        }
+
+        public static class TerminalEditor implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<Not> {
+
+            @Override
+            public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
+                registry.register("texturegen.not", this);
+            }
+
+            @Override
+            public void editorLoop(Not pointFilter, Consumer<Not> setter, TerminalMenuContext context) {
+                TerminalMenu menu = new TerminalMenu("Edit Not Point Filter")
+                    .autoUppercase()
+                    .addKey('-', "Back")
+                    .addKey('E', "", () -> {
+                        if (pointFilter.filter == null) {
+                            TerminalPointFilterEditorProvider.getSelectionList(newFilter -> {
+                                pointFilter.filter = newFilter;
+                                setter.accept(pointFilter);
+                            }, context).run();
+                        } else {
+                            TerminalPointFilterEditorProvider.getEditorLoop(pointFilter.filter, newFilter -> {
+                                pointFilter.filter = newFilter;
+                                setter.accept(pointFilter);
+                            }, context).run();
+                        }
+                    }).addKey('R', "Replace inner filter", () -> {
+                        TerminalPointFilterEditorProvider.getSelectionList(newFilter -> {
+                            pointFilter.filter = newFilter;
+                            setter.accept(pointFilter);
+                        }, context).run();
+                    });
+                while (true) {
+                    menu.updateKeyDescription('E', "Edit inner filter (Current: %s)".formatted(pointFilter.filter == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(pointFilter.filter.getPointFilterTitle())));
+                    char c = menu.scan(context);
+                    if (c == '-') {
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public Editor<? extends PointFilter> getEditor() {
+                return this;
+            }
+
         }
 
     }

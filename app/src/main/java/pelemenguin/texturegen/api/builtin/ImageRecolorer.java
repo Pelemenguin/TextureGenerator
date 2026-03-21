@@ -15,6 +15,7 @@ import pelemenguin.texturegen.api.client.terminal.ColorPickerMenu;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
+import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
@@ -347,7 +348,9 @@ public class ImageRecolorer implements Processor {
                         context.outStream().println(ANSIHelper.red("Grey value " + grey + " is not in the palette"));
                     }
                     processor.palette.refreshCache();
-                });
+                })
+                .addKey('F', "Point filter", () -> TerminalPointFilterEditorProvider.getEditorLoop(processor.filter, filter -> processor.filter = filter, context).run())
+                .addKey('G', "Replace point filter", TerminalPointFilterEditorProvider.getSelectionList(filter -> processor.filter = filter, context));
             while (true) {
                 StringBuilder descStringBuilder = new StringBuilder("Image Recolorer\n\nPalette:\n");
 
@@ -381,6 +384,7 @@ public class ImageRecolorer implements Processor {
                 }
 
                 menu.updateDescription(descStringBuilder.toString());
+                menu.updateKeyDescription('F', "Point filter: " + (processor.filter == null ? ANSIHelper.red("Unset") : ANSIHelper.blue(processor.filter.getPointFilterTitle())));
 
                 char c = menu.scan(context);
 

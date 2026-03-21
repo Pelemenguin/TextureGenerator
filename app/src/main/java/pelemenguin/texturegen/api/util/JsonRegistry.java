@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,6 +21,7 @@ import com.google.gson.stream.JsonWriter;
 public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
 
     private Class<R> baseType;
+    private BiConsumer<JsonRegistry<R>, R> extraRegistryAction;
     private String typeField = "type";
     private boolean allowNull = false;
     private HashMap<String, Class<? extends R>> typeRegistry = new HashMap<>();
@@ -28,8 +30,13 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
 
     private boolean loaded = false;
 
-    public JsonRegistry(Class<R> baseType) {
+    public JsonRegistry(Class<R> baseType, BiConsumer<JsonRegistry<R>, R> extraRegistryAction) {
         this.baseType = baseType;
+        this.extraRegistryAction = extraRegistryAction;
+    }
+
+    public JsonRegistry(Class<R> baseType) {
+        this(baseType, (r1, r2) -> {});
     }
 
     public synchronized <E extends R> void register(String id, Class<E> type, TypeAdapter<E> typeAdapter) {
@@ -69,7 +76,6 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
     public synchronized void ensureServiceLoaded() {
         if (!loaded) {
             reloadFromServiceLoader();
-            loaded = true;
         }
     }
 
@@ -83,9 +89,11 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         typeRegistry.clear();
         inversedTypeRegistry.clear();
         typeAdapters.clear();
+        this.loaded = true;
         for (R entry : loader) {
             try {
                 entry.register(this);
+                this.extraRegistryAction.accept(this, entry);
             } catch (Throwable e) {
                 // Ignore
             }

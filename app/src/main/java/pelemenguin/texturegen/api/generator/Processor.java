@@ -17,16 +17,13 @@ public interface Processor extends JsonRegistry.Registrable<Processor> {
 
     public void process(GenerationContext context, GenerationExecutor.Parameter parameters, GenerationExecutor.Result result);
 
-    @Override
-    default void register(JsonRegistry<Processor> registry) {
-        
-    }
+    public void register(JsonRegistry<Processor> registry);
 
     public List<Class<?>> getInputTypes();
     public List<Class<?>> getOutputTypes();
 
     public default String getProcessorName() {
-        return this.getClass().getName();
+        return REGISTRY.getIdOf(this.getClass());
     }
 
     public default String getProcessorTitle() {
