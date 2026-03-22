@@ -93,11 +93,11 @@ public interface Processor extends JsonRegistry.Registrable<Processor> {
 
         @Override
         public String getProcessorTitle() {
-            if (this.reason == DeserializationFailedReason.MISSING_TYPE) {
-                return "[UNKNOWN]";
-            } else {
-                return "[UNKNOWN type=" + this.raw.getAsJsonObject().get("type") + "]";
-            }
+            return switch (this.reason) {
+                case MISSING_TYPE -> "[UNKNOWN]";
+                case TYPE_NOT_FOUND -> this.raw.getAsJsonObject().get("type") + " [UNRECOGNIZED]";
+                case ADAPTER_THREW_EXCEPTION -> this.raw.getAsJsonObject().get("type") + " [BROKEN]";
+            };
         }
 
     }

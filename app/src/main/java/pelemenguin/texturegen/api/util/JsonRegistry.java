@@ -159,7 +159,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
     }
 
     public static enum DeserializationFailedReason {
-        MISSING_TYPE, TYPE_NOT_FOUND;
+        MISSING_TYPE, TYPE_NOT_FOUND, ADAPTER_THREW_EXCEPTION;
     }
 
     private static class RegistryTypeAdapterFactory<R extends JsonRegistry.Registrable<R>> implements TypeAdapterFactory {
@@ -244,11 +244,15 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
                         return useFallback(typeFieldName, jsonObject, new JsonParseException("Unregistered type id: " + id), DeserializationFailedReason.TYPE_NOT_FOUND);
                     }
                     TypeAdapter<R> typeAdapter = (TypeAdapter<R>) registry.getTypeAdapter(id);
-                    if (typeAdapter != null) {
-                        return (T) typeAdapter.fromJsonTree(jsonObject);
-                    } else {
-                        TypeAdapter<R> delegateAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(RegistryTypeAdapterFactory.this, TypeToken.get(clazz));
-                        return (T) delegateAdapter.fromJsonTree(jsonObject);
+                    try {
+                        if (typeAdapter != null) {
+                            return (T) typeAdapter.fromJsonTree(jsonObject);
+                        } else {
+                            TypeAdapter<R> delegateAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(RegistryTypeAdapterFactory.this, TypeToken.get(clazz));
+                            return (T) delegateAdapter.fromJsonTree(jsonObject);
+                        }
+                    } catch (Throwable e) {
+                        return useFallback(typeFieldName, jsonObject, new JsonParseException(e), DeserializationFailedReason.ADAPTER_THREW_EXCEPTION);
                     }
                 }
 

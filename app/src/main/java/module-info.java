@@ -26,6 +26,7 @@ module pelemenguin.texturegen {
         ImageRecolorer.Editor;
 
     provides PointFilter with
+        PointFilter.ErrorPointFilter,
         PointFilter.AlwaysPass,
         PointFilter.AlwaysFail,
         PointFilter.And,

@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.stream.JsonReader;
@@ -27,7 +28,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
 
     public static final JsonRegistry<PointFilter> REGISTRY = new JsonRegistry<>(PointFilter.class, (registry, filter) -> {
         PrivateObjectHolder.ID_TO_NAME.put(registry.getIdOf(filter.getClass()), filter.getPointFilterName());
-    });
+    }).setFallbackId("texturegen.error");
     // public static final JsonRegistry<PointFilter> REGISTRY = new JsonRegistry<>(PointFilter.class);
     public static final TypeAdapterFactory TYPE_ADAPTER = REGISTRY.createTypeAdapterFactory();
     public static final Gson GSON = REGISTRY.createGsonBuilder()
@@ -148,6 +149,63 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         Not not = new Not();
         not.filter = filter;
         return not;
+    }
+
+    public static class ErrorPointFilter implements PointFilter, JsonRegistry.ErrorFallback<PointFilter> {
+
+        private JsonElement raw;
+        private Throwable cause;
+        private JsonRegistry.DeserializationFailedReason reason;
+
+        @Override
+        public void register(JsonRegistry<PointFilter> registry) {
+            registry.register("texturegen.error", ErrorPointFilter.class);
+        }
+
+        @Override
+        public JsonElement getRawJson() {
+            return this.raw;
+        }
+
+        @Override
+        public Throwable getCause() {
+            return this.cause;
+        }
+
+        @Override
+        public void setRawJson(JsonElement json) {
+            this.raw = json;
+        }
+
+        @Override
+        public void setCause(Throwable cause) {
+            this.cause = cause;
+        }
+
+        @Override
+        public void setReason(JsonRegistry.DeserializationFailedReason reason) {
+            this.reason = reason;
+        }
+
+        @Override
+        public void filter(BufferedImage image, BufferedImage maskResult) {
+            throw new IllegalStateException("Cannot filter with error point filter", cause);
+        }
+
+        @Override
+        public String getPointFilterName() {
+            return "[ERROR]";
+        }
+
+        @Override
+        public String getPointFilterTitle() {
+            return switch (this.reason) {
+                case MISSING_TYPE -> "[UNKNOWN]";
+                case TYPE_NOT_FOUND -> this.raw.getAsJsonObject().get("type") + " [UNRECOGNIZED]";
+                case ADAPTER_THREW_EXCEPTION -> this.raw.getAsJsonObject().get("type") + " [BROKEN]";
+            };
+        }
+
     }
 
     public static class AlwaysPass implements PointFilter {

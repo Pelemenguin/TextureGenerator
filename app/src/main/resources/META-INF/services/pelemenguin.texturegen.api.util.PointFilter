@@ -1,3 +1,4 @@
+pelemenguin.texturegen.api.util.PointFilter$ErrorPointFilter
 pelemenguin.texturegen.api.util.PointFilter$AlwaysPass
 pelemenguin.texturegen.api.util.PointFilter$AlwaysFail
 pelemenguin.texturegen.api.util.PointFilter$And
