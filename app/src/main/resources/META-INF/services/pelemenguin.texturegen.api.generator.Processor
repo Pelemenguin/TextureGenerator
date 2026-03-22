@@ -2,3 +2,4 @@ pelemenguin.texturegen.api.generator.Processor$ErrorProcessor
 pelemenguin.texturegen.api.builtin.ImageRecolorer
 pelemenguin.texturegen.api.builtin.ImageCloner
 pelemenguin.texturegen.api.builtin.StackPopper
+pelemenguin.texturegen.api.builtin.StackDuplicator

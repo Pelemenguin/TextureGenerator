@@ -2,6 +2,7 @@ import pelemenguin.texturegen.api.builtin.ImageRecolorer;
 import pelemenguin.texturegen.api.builtin.HSVPointFilter;
 import pelemenguin.texturegen.api.builtin.ImageCloner;
 import pelemenguin.texturegen.api.builtin.RGBAPointFilter;
+import pelemenguin.texturegen.api.builtin.StackDuplicator;
 import pelemenguin.texturegen.api.builtin.StackPopper;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
@@ -24,11 +25,13 @@ module pelemenguin.texturegen {
         Processor.ErrorProcessor,
         ImageCloner,
         ImageRecolorer,
-        StackPopper;
+        StackPopper,
+        StackDuplicator;
 
     provides TerminalProcessorEditorProvider with
         ImageRecolorer.Editor,
-        StackPopper.TerminalEditor;
+        StackPopper.TerminalEditor,
+        StackDuplicator.TerminalEditor;
 
     provides PointFilter with
         PointFilter.ErrorPointFilter,

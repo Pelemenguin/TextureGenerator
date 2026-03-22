@@ -27,8 +27,8 @@ import pelemenguin.texturegen.api.util.PointFilter;
 
 public class ImageRecolorer implements Processor {
 
-    private Palette palette;
-    private PointFilter filter = PointFilter.alwaysPass();
+    public Palette palette;
+    public PointFilter filter = PointFilter.alwaysPass();
 
     /**
      * Constructs an {@link ImageRecolorer} with a default palette that maps 0 to black and 255 to white, and linearly interpolates in between.

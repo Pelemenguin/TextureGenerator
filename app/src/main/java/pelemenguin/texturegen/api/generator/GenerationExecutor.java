@@ -347,8 +347,9 @@ public class GenerationExecutor {
 
         // Iterate through processors and process
         for (Processor processor : processors) {
-            List<Class<?>> inputTypes = processor.getInputTypes();
-            List<Class<?>> outputTypes = processor.getOutputTypes();
+            List<Class<?>> typesView = List.copyOf(types);
+            List<Class<?>> inputTypes = processor.getInputTypes(typesView);
+            List<Class<?>> outputTypes = processor.getOutputTypes(typesView);
 
             if (types.size() < inputTypes.size()) {
                 throw new IllegalStateException("Not enough parameters for processor " + processor
@@ -399,8 +400,9 @@ public class GenerationExecutor {
         types.addFirst(BufferedImage.class);
 
         for (Processor processor : processors) {
-            List<Class<?>> inputTypes = processor.getInputTypes();
-            List<Class<?>> outputTypes = processor.getOutputTypes();
+            List<Class<?>> typesView = List.copyOf(types);
+            List<Class<?>> inputTypes = processor.getInputTypes(typesView);
+            List<Class<?>> outputTypes = processor.getOutputTypes(typesView);
 
             if (types.size() < inputTypes.size()) {
                 throw new IllegalArgumentException("Not enough parameters for processor " + processor

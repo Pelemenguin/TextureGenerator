@@ -17,15 +17,7 @@ import pelemenguin.texturegen.api.util.JsonRegistry;
 
 public class StackPopper implements Processor {
 
-    private int popCount;
-
-    public StackPopper(int popCount) {
-        this.popCount = popCount;
-    }
-
-    public StackPopper() {
-        this(1);
-    }
+    public int popCount = 1;
 
     @Override
     public void process(GenerationContext context, Parameter parameters, Result result) {
@@ -52,12 +44,12 @@ public class StackPopper implements Processor {
 
     @Override
     public String getProcessorName() {
-        return "Pop Stack";
+        return "Pop Stack Elements";
     }
 
     @Override
     public String getProcessorTitle() {
-        return "Pop " + this.popCount + " Element(s) from Stack";
+        return "Pop " + this.popCount + " Stack Element(s)";
     }
 
     public static class TerminalEditor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<StackPopper> {
@@ -69,7 +61,7 @@ public class StackPopper implements Processor {
 
         @Override
         public void editorLoop(StackPopper processor, Consumer<StackPopper> setter, TerminalMenuContext context) {
-            StringInput input = new StringInput("Enter new pop count (leave empty to cancel. Original: " + ANSIHelper.blue(String.valueOf(processor.popCount)))
+            StringInput input = new StringInput("Enter new pop count (leave empty to cancel. Original: " + ANSIHelper.blue(String.valueOf(processor.popCount)) + ")")
                 .allowEmpty();
             while (true) {
                 String result = input.scan(context);
