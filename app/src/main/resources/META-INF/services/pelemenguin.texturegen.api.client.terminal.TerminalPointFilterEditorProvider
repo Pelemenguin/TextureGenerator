@@ -4,3 +4,7 @@ pelemenguin.texturegen.api.util.PointFilter$Not$TerminalEditor
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Hue$TerminalEditor
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Saturation$TerminalEditor
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Value$TerminalEditor
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Red$TerminalEditor
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Green$TerminalEditor
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Blue$TerminalEditor
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Alpha$TerminalEditor

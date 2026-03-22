@@ -1,6 +1,8 @@
 package pelemenguin.texturegen.api.builtin;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.util.function.Consumer;
 
 import com.google.gson.annotations.SerializedName;
@@ -10,13 +12,12 @@ import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
-import pelemenguin.texturegen.api.util.ColorHelper;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 import pelemenguin.texturegen.api.util.JsonRegistry;
 import pelemenguin.texturegen.api.util.PointFilter;
 
-public sealed abstract class HSVPointFilter implements PredicatePointFilter
-    permits HSVPointFilter.Value, HSVPointFilter.Saturation, HSVPointFilter.Hue {
+public sealed abstract class RGBAPointFilter implements PointFilter
+    permits RGBAPointFilter.Red, RGBAPointFilter.Green, RGBAPointFilter.Blue, RGBAPointFilter.Alpha {
 
     @SerializedName("lower_bound")
     protected int lowerBound;
@@ -29,23 +30,63 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
     @SerializedName("invert")
     protected boolean invert = false;
 
-    protected transient int hsvBand;
-    protected transient String hsvName;
+    protected transient int rgbaBand;
+    protected transient String rgbaName;
 
-    protected transient int MAX;
-    protected transient int MIN;
+    protected transient final int MAX = 255;
+    protected transient final int MIN = 0;
+
+    public RGBAPointFilter() {
+        this.lowerBound = this.MIN;
+        this.upperBound = this.MAX;
+    }
 
     protected boolean testValue(int value) {
         boolean lowerPass = (invert ^ lowerBoundInclusive) ? value >= lowerBound : value > lowerBound;
         boolean upperPass = (invert ^ upperBoundInclusive) ? value <= upperBound : value < upperBound;
         return invert ^ (lowerPass && upperPass);
     }
+    
+    @Override
+    public void filter(BufferedImage image, BufferedImage maskResult) {
+        Raster raster = image.getRaster();
+        WritableRaster result = maskResult.getRaster();
+        for (int y = 0; y < raster.getHeight(); y++) {
+            for (int x = 0; x < raster.getWidth(); x++) {
+                int value = raster.getSample(x, y, rgbaBand);
+                int maskValue = testValue(value) ? 1 : 0;
+                result.setSample(x, y, 0, maskValue);
+            }
+        }
+    }
 
-    public static sealed abstract class TerminalEditor<F extends HSVPointFilter> implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<F>
-        permits Hue.TerminalEditor, Saturation.TerminalEditor, Value.TerminalEditor {
+    @Override
+    public String getPointFilterName() {
+        return "RGBA " + this.rgbaName + " Filter";
+    }
+
+    @Override
+    public String getPointFilterTitle() {
+        String lowerBoundSymbol = lowerBoundInclusive ? "\u2264" : "<";
+        String upperBoundSymbol = invert ? (upperBoundInclusive ? "\u2265" : ">") : (upperBoundInclusive ? "\u2264" : "<");
+        if (invert) {
+            return String.format("RGBA %1$s (%1$s %2$s %3$d or %1$s %4$s %5$d)", this.rgbaName, lowerBoundSymbol, lowerBound, upperBoundSymbol, upperBound);
+        } else {
+            return String.format("RGBA %1$s (%3$d %2$s %1$s %4$s %5$d)", this.rgbaName, lowerBoundSymbol, lowerBound, upperBoundSymbol, upperBound);
+        }
+    }
+
+    public static sealed abstract class TerminalEditor implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<RGBAPointFilter>
+        permits Red.TerminalEditor, Green.TerminalEditor, Blue.TerminalEditor, Alpha.TerminalEditor {
 
         @Override
-        public void editorLoop(F pointFilter, Consumer<F> setter, TerminalMenuContext context) {
+        public Editor<? extends PointFilter> getEditor() {
+            return this;
+        }
+
+        @Override
+        public void editorLoop(RGBAPointFilter pointFilter, Consumer<RGBAPointFilter> setter,
+                TerminalMenuContext context) {
             TerminalMenu menu = new TerminalMenu("")
                 .autoUppercase();
             menu.addKey('-', "Back")
@@ -118,117 +159,98 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
             }
         }
 
-        @Override
-        public Editor<? extends PointFilter> getEditor() {
-            return this;
-        }
-
     }
 
-    @Override
-    public boolean testPoint(BufferedImage image, int x, int y) {
-        int[] temp = new int[3];
-        int rgba = image.getRGB(x, y);
-        ColorHelper.rgbToHsv(
-            (rgba >> 16) & 0xFF,
-            (rgba >> 8) & 0xFF,
-            rgba & 0xFF,
-            temp
-        );
-        return testValue(temp[this.hsvBand]);
-    }
+    public static final class Red extends RGBAPointFilter {
 
-    @Override
-    public String getPointFilterName() {
-        return "HSV " + this.hsvName + " Filter";
-    }
-
-    @Override
-    public String getPointFilterTitle() {
-        String lowerBoundSymbol = lowerBoundInclusive ? "\u2264" : "<";
-        String upperBoundSymbol = invert ? (upperBoundInclusive ? "\u2265" : ">") : (upperBoundInclusive ? "\u2264" : "<");
-        if (invert) {
-            return String.format("HSV %1$s (%1$s %2$s %3$d or %1$s %4$s %5$d)", this.hsvName, lowerBoundSymbol, lowerBound, upperBoundSymbol, upperBound);
-        } else {
-            return String.format("HSV %1$s (%3$d %2$s %1$s %4$s %5$d)", this.hsvName, lowerBoundSymbol, lowerBound, upperBoundSymbol, upperBound);
-        }
-    }
-
-    public static final class Hue extends HSVPointFilter {
-
-        public Hue() {
-            this.MIN = 0;
-            this.MAX = 360;
-            this.lowerBound = this.MIN;
-            this.upperBound = this.MAX;
-            this.hsvBand = 0;
-            this.hsvName = "Hue";
+        public Red() {
+            super();
+            this.rgbaBand = 0;
+            this.rgbaName = "Red";
         }
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
-            registry.register("texturegen.hsv.hue", Hue.class);
+            registry.register("texturegen.rgba.red", Red.class);
         }
 
-        public static final class TerminalEditor extends HSVPointFilter.TerminalEditor<Hue> {
+        public static final class TerminalEditor extends RGBAPointFilter.TerminalEditor {
 
             @Override
             public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
-                registry.register("texturegen.hsv.hue", this);
+                registry.register("texturegen.rgba.red", this);
             }
 
         }
 
     }
 
-    public static final class Saturation extends HSVPointFilter {
+    public static final class Green extends RGBAPointFilter {
 
-        public Saturation() {
-            this.MIN = 0;
-            this.MAX = 100;
-            this.lowerBound = this.MIN;
-            this.upperBound = this.MAX;
-            this.hsvBand = 1;
-            this.hsvName = "Saturation";
+        public Green() {
+            super();
+            this.rgbaBand = 1;
+            this.rgbaName = "Green";
         }
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
-            registry.register("texturegen.hsv.saturation", Saturation.class);
+            registry.register("texturegen.rgba.green", Green.class);
         }
 
-        public static final class TerminalEditor extends HSVPointFilter.TerminalEditor<Saturation> {
+        public static final class TerminalEditor extends RGBAPointFilter.TerminalEditor {
 
             @Override
             public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
-                registry.register("texturegen.hsv.saturation", this);
+                registry.register("texturegen.rgba.green", this);
             }
 
         }
 
     }
 
-    public static final class Value extends HSVPointFilter {
+    public static final class Blue extends RGBAPointFilter {
 
-        public Value() {
-            this.MIN = 0;
-            this.MAX = 100;
-            this.lowerBound = this.MIN;
-            this.upperBound = this.MAX;
-            this.hsvBand = 2;
-            this.hsvName = "Value";
+        public Blue() {
+            super();
+            this.rgbaBand = 2;
+            this.rgbaName = "Blue";
         }
 
         @Override
         public void register(JsonRegistry<PointFilter> registry) {
-            registry.register("texturegen.hsv.value", Value.class);
+            registry.register("texturegen.rgba.blue", Blue.class);
         }
 
-        public static final class TerminalEditor extends HSVPointFilter.TerminalEditor<Value> {
+        public static final class TerminalEditor extends RGBAPointFilter.TerminalEditor {
 
             @Override
             public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
-                registry.register("texturegen.hsv.value", this);
+                registry.register("texturegen.rgba.blue", this);
+            }
+
+        }
+
+    }
+
+    public static final class Alpha extends RGBAPointFilter {
+
+        public Alpha() {
+            super();
+            this.rgbaBand = 3;
+            this.rgbaName = "Alpha";
+        }
+
+        @Override
+        public void register(JsonRegistry<PointFilter> registry) {
+            registry.register("texturegen.rgba.alpha", Alpha.class);
+        }
+
+        public static final class TerminalEditor extends RGBAPointFilter.TerminalEditor {
+
+            @Override
+            public void register(CommonRegistry<TerminalPointFilterEditorProvider> registry) {
+                registry.register("texturegen.rgba.alpha", this);
             }
 
         }

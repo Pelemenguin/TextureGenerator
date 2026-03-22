@@ -6,3 +6,7 @@ pelemenguin.texturegen.api.util.PointFilter$Not
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Hue
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Saturation
 pelemenguin.texturegen.api.builtin.HSVPointFilter$Value
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Red
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Green
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Blue
+pelemenguin.texturegen.api.builtin.RGBAPointFilter$Alpha
