@@ -27,7 +27,8 @@ module pelemenguin.texturegen {
         StackPopper;
 
     provides TerminalProcessorEditorProvider with
-        ImageRecolorer.Editor;
+        ImageRecolorer.Editor,
+        StackPopper.TerminalEditor;
 
     provides PointFilter with
         PointFilter.ErrorPointFilter,

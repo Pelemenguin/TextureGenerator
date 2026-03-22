@@ -41,4 +41,14 @@ public class ImageCloner implements Processor {
         return List.of(BufferedImage.class, BufferedImage.class);
     }
 
+    @Override
+    public String getProcessorName() {
+        return "Image Cloner";
+    }
+
+    @Override
+    public String getProcessorTitle() {
+        return "Image Cloner";
+    }
+
 }

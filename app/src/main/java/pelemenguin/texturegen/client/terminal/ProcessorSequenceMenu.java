@@ -28,7 +28,8 @@ public class ProcessorSequenceMenu {
     private static void create(Consumer<Processor> setter, TerminalMenuContext context) {
         List<String> processors = List.copyOf(Processor.REGISTRY.getRegisteredIds());
         ListEditorMenu<String> processorSelector = new ListEditorMenu<>(processors)
-            .description("Select a processor to add:");
+            .description("Select a processor to add:")
+            .strigifier(Processor::getNameOf);
         String selected = processorSelector.loop(context);
         if (selected != null) {
             Class<? extends Processor> processorClass = Processor.REGISTRY.getClassOf(selected);

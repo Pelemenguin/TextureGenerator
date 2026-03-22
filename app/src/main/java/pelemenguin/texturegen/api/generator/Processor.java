@@ -1,5 +1,6 @@
 package pelemenguin.texturegen.api.generator;
 
+import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -13,12 +14,22 @@ import pelemenguin.texturegen.api.util.JsonRegistry.DeserializationFailedReason;
 
 public interface Processor extends JsonRegistry.Registrable<Processor> {
 
-    public static final JsonRegistry<Processor> REGISTRY = new JsonRegistry<>(Processor.class)
+    public static final JsonRegistry<Processor> REGISTRY = new JsonRegistry<>(Processor.class, (registry, processor) -> {
+        PrivateObjectHolder.PROCESSOR_NAMES.put(registry.getIdOf(processor.getClass()), processor.getProcessorName());
+    })
         .setFallbackId("texturegen.error");
     public static final Gson GSON = REGISTRY.createGsonBuilder()
         .registerTypeAdapterFactory(PointFilter.TYPE_ADAPTER)
         .setPrettyPrinting()
         .create();
+        
+    public static class PrivateObjectHolder {
+        private static final HashMap<String, String> PROCESSOR_NAMES = new HashMap<>();
+    }
+
+    public static String getNameOf(String processorId) {
+        return PrivateObjectHolder.PROCESSOR_NAMES.getOrDefault(processorId, processorId);
+    }
 
     public void process(GenerationContext context, GenerationExecutor.Parameter parameters, GenerationExecutor.Result result);
 
