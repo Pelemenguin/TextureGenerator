@@ -11,6 +11,7 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -334,86 +335,68 @@ public class GenerationExecutor {
         return converted;
     }
 
-    public static BufferedImage runSingle(BufferedImage image, GenerationContext context, List<Processor> processors) throws IllegalArgumentException, IllegalStateException {
+    public static BufferedImage runSingle(BufferedImage image, GenerationContext context, List<Processor> processors) throws IllegalStateException {
         if (processors.isEmpty()) return image;
 
-        ArrayDeque<List<?>> stack = new ArrayDeque<>();
+        ArrayDeque<Object> stack = new ArrayDeque<>();
         ArrayDeque<Class<?>> types = new ArrayDeque<>();
 
         // Push input image
-        stack.add(List.of(image));
-        types.add(BufferedImage.class);
+        stack.addFirst(image);
+        types.addFirst(BufferedImage.class);
 
-        // Iterate processors and process
-        processorLoop:
+        // Iterate through processors and process
         for (Processor processor : processors) {
             List<Class<?>> inputTypes = processor.getInputTypes();
             List<Class<?>> outputTypes = processor.getOutputTypes();
 
-            Parameter parameter = new Parameter(new Object[inputTypes.size()]);
-            List<?>[] inputLists = new List[inputTypes.size()];
-            for (int i = inputLists.length - 1; i >= 0; i--) {
-                inputLists[i] = stack.pop();
-            }
-            // Implement loop equivalent to Cartesian product inline
-            int[] indices = new int[inputLists.length];
-            for (List<?> list : inputLists) {
-                if (list.isEmpty()) {
-                    // Push empty lists
-                    for (int i = 0; i < outputTypes.size(); i++) {
-                        stack.add(List.of());
-                        types.add(outputTypes.get(i));
-                    }
-                    continue processorLoop;
-                }
-            }
-            Result result = new Result(outputTypes.toArray(new Class[0]));
-            // Init parameter
-            for (int i = 0; i < inputLists.length; i++) {
-                parameter.updateData(i, inputLists[i].get(0));
-            }
-            while (true) {
-                processor.process(context, parameter, result);
-                int pos = indices.length - 1;
-                while (pos >= 0) {
-                    indices[pos] ++;
-                    if (indices[pos] < inputLists[pos].size()) {
-                        parameter.updateData(pos, inputLists[pos].get(indices[pos]));
-                        break;
-                    } else {
-                        indices[pos] = 0;
-                        parameter.updateData(pos, inputLists[pos].get(0));
-                        pos --;
-                    }
-                }
-                if (pos < 0) {
-                    break;
-                }
+            if (types.size() < inputTypes.size()) {
+                throw new IllegalStateException("Not enough parameters for processor " + processor
+                    + "\nCurrent stack: " + types + "\nRequired types" + inputTypes);
             }
 
-            // Push results to stack
-            for (int i = outputTypes.size() - 1; i >= 0; i--) {
-                stack.add(result.data[i]);
-                types.add(result.types[i]);
+            Object[] inputs = new Object[inputTypes.size()];
+            for (int i = inputs.length - 1; i >= 0; i--) {
+                Class<?> expectedType = inputTypes.get(i);
+                Object actualObject = stack.pollFirst();
+                Class<?> actualType = types.pollFirst();
+
+                if (!expectedType.isAssignableFrom(actualType)) {
+                    throw new IllegalStateException("Expected type " + expectedType.getName() + " but got " + actualType.getName() + " for processor " + processor.getClass().getName());
+                }
+
+                inputs[i] = actualObject;
+            }
+
+            Parameter parameter = new Parameter(inputs);
+            Result result = new Result(outputTypes.toArray(new Class<?>[0]));
+            try {
+                processor.process(context, parameter, result);
+            } catch (Exception e) {
+                throw new IllegalStateException("Processor " + processor.getProcessorTitle() + " threw an exception: " + e.getMessage(), e);
+            }
+
+            // Push output types and objects
+            for (int i = 0; i < outputTypes.size(); i++) {
+                stack.addFirst(result.data()[i]);
+                types.addFirst(outputTypes.get(i));
             }
         }
 
         if (stack.size() != 1) {
-            throw new IllegalStateException("Expected exactly one output but got " + stack.size());
+            throw new IllegalStateException("Expected exactly one output after processing, but got " + stack.size());
         }
-        if (!BufferedImage.class.isAssignableFrom(types.peek())) {
-            throw new IllegalStateException("Expected output type " + BufferedImage.class.getName() + " but got " + types.peek().getName());
+        Object finalResult = stack.pollFirst();
+        if (finalResult instanceof BufferedImage r) {
+            return r;
+        } else {
+            throw new IllegalStateException("Expected final output to be a BufferedImage, but got " + finalResult.getClass().getName());
         }
-        List<?> finalResult = stack.pop();
-        if (finalResult.size() != 1) {
-            throw new IllegalStateException("Expected exactly one output but got " + finalResult.size());
-        }
-        return (BufferedImage) finalResult.get(0);
     }
 
     private static void typeCheck(List<Processor> processors) {
         ArrayDeque<Class<?>> types = new ArrayDeque<>();
-        types.add(BufferedImage.class);
+        types.addFirst(BufferedImage.class);
 
         for (Processor processor : processors) {
             List<Class<?>> inputTypes = processor.getInputTypes();
@@ -435,7 +418,7 @@ public class GenerationExecutor {
 
             // Push output types
             for (Class<?> outputType : outputTypes) {
-                types.add(outputType);
+                types.addFirst(outputType);
             }
         }
     }
@@ -445,11 +428,8 @@ public class GenerationExecutor {
             try {
                 return type.cast(data[index]);
             } catch (ClassCastException e) {
-                throw new IllegalArgumentException("Parameter at index " + index + " is not of type " + type.getName());
+                throw new IllegalArgumentException("Parameter at index " + index + " is not of type " + type.getName() + ". Parameters: " + Arrays.toString(data));
             }
-        }
-        private void updateData(int index, Object data) {
-            this.data[index] = data;
         }
     }
 
@@ -460,18 +440,13 @@ public class GenerationExecutor {
         }
     }
 
-    public static record Result(Class<?>[] types, List<Object>[] data) {
+    public static record Result(Class<?>[] types, Object[] data) {
         public Result(Class<?>[] types) {
-            this(types, new List[types.length]);
-            for (int i = 0; i < types.length; i++) {
-                data[i] = new ArrayList<>();
-            }
+            this(types, new Object[types.length]);
         }
         public <T> void push(int index, T object) throws IllegalArgumentException {
-            if (object == null) return;
             try {
-                if (object == data[data.length - 1]) return;
-                data[index].add(types[index].cast(object));
+                data[index] = types[index].cast(object);
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Result at index " + index + " is not of type " + types[index].getName());
             }
