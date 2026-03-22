@@ -234,7 +234,7 @@ public class ImageRecolorer implements Processor {
 
     @Override
     public void register(JsonRegistry<Processor> registry) {
-        registry.register("texturegen.image_recolorer", ImageRecolorer.class, new Adapter());
+        registry.register("texturegen.image.recolorer", ImageRecolorer.class, new Adapter());
     }
 
     public static class Adapter extends TypeAdapter<ImageRecolorer> {
@@ -287,7 +287,7 @@ public class ImageRecolorer implements Processor {
 
         @Override
         public void register(CommonRegistry<TerminalProcessorEditorProvider> registry) {
-            registry.register("texturegen.image_recolorer", this);
+            registry.register("texturegen.image.recolorer", this);
         }
 
         @Override

@@ -27,8 +27,10 @@ public class GeneratorInfo {
     }
 
     public void saveToFile(File file) throws IOException, JsonIOException {
+        StringBuilder builder = new StringBuilder();
+        GSON.toJson(this, builder);
         try (FileWriter writer = new FileWriter(file)) {
-            GSON.toJson(this, writer);
+            writer.write(builder.toString());
         }
     }
 

@@ -31,6 +31,7 @@ public class GenerationExecutor {
         int successfulImages,
         int failedImages,
         int unfoundImages,
+        int skippedImages,
         List<GenerationError> exceptions
     ) {}
 
@@ -47,6 +48,21 @@ public class GenerationExecutor {
         List<GenerationError> exceptions = Collections.synchronizedList(new ArrayList<>());
 
         int totalImages = textureInfos.size();
+
+        // Type check
+        try {
+            typeCheck(processors);
+        } catch (Throwable t) {
+            exceptions.add(new GenerationError(null, new GeneratorException("Processor type check failed: " + t.getMessage(), t)));
+            return new ExecutionResult(
+                totalImages,
+                0,
+                0,
+                0,
+                totalImages,
+                exceptions
+            );
+        }
 
         final ProgressReporter reporter;
         if (out != null) {
@@ -193,6 +209,7 @@ public class GenerationExecutor {
             successfulImages,
             failedImages,
             unfoundImages,
+            skippedImages,
             exceptions
         );
     }
@@ -327,31 +344,6 @@ public class GenerationExecutor {
         stack.add(List.of(image));
         types.add(BufferedImage.class);
 
-        // Type check
-        for (Processor processor : processors) {
-            List<Class<?>> inputTypes = processor.getInputTypes();
-            List<Class<?>> outputTypes = processor.getOutputTypes();
-
-            if (stack.size() < inputTypes.size()) {
-                throw new IllegalArgumentException("Not enough parameters for processor " + processor
-                    + "\nCurrent stack: " + types + "\nRequired types" + inputTypes);
-            }
-
-            for (int i = 0; i < inputTypes.size(); i++) {
-                Class<?> expectedType = inputTypes.get(i);
-                Class<?> actualType = types.pollFirst();
-
-                if (!expectedType.isAssignableFrom(actualType)) {
-                    throw new IllegalArgumentException("Expected type " + expectedType.getName() + " but got " + actualType.getName() + " for processor " + processor.getClass().getName());
-                }
-            }
-
-            // Push output types
-            for (Class<?> outputType : outputTypes) {
-                types.add(outputType);
-            }
-        }
-
         // Iterate processors and process
         processorLoop:
         for (Processor processor : processors) {
@@ -417,6 +409,35 @@ public class GenerationExecutor {
             throw new IllegalStateException("Expected exactly one output but got " + finalResult.size());
         }
         return (BufferedImage) finalResult.get(0);
+    }
+
+    private static void typeCheck(List<Processor> processors) {
+        ArrayDeque<Class<?>> types = new ArrayDeque<>();
+        types.add(BufferedImage.class);
+
+        for (Processor processor : processors) {
+            List<Class<?>> inputTypes = processor.getInputTypes();
+            List<Class<?>> outputTypes = processor.getOutputTypes();
+
+            if (types.size() < inputTypes.size()) {
+                throw new IllegalArgumentException("Not enough parameters for processor " + processor
+                    + "\nCurrent stack: " + types + "\nRequired types" + inputTypes);
+            }
+
+            for (int i = 0; i < inputTypes.size(); i++) {
+                Class<?> expectedType = inputTypes.get(i);
+                Class<?> actualType = types.pollFirst();
+
+                if (!expectedType.isAssignableFrom(actualType)) {
+                    throw new IllegalArgumentException("Expected type " + expectedType.getName() + " but got " + actualType.getName() + " for processor " + processor.getClass().getName());
+                }
+            }
+
+            // Push output types
+            for (Class<?> outputType : outputTypes) {
+                types.add(outputType);
+            }
+        }
     }
 
     public static record Parameter(Object[] data) {

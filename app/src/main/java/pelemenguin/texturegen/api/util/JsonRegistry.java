@@ -28,6 +28,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
     private HashMap<String, Class<? extends R>> typeRegistry = new HashMap<>();
     private HashMap<Class<? extends R>, String> inversedTypeRegistry = new HashMap<>();
     private HashMap<Class<? extends R>, TypeAdapter<? extends R>> typeAdapters = new HashMap<>();
+    private String errorFallbackId = null;
 
     private boolean loaded = false;
 
@@ -54,6 +55,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         ensureServiceLoaded();
         TreeSet<String> result = new TreeSet<>(CommonRegistry.ID_COMPARATOR);
         result.addAll(typeRegistry.keySet());
+        if (errorFallbackId != null) result.remove(errorFallbackId);
         return result;
     }
 
@@ -118,6 +120,11 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         return this;
     }
 
+    public synchronized JsonRegistry<R> setFallbackId(String id) {
+        this.errorFallbackId = id;
+        return this;
+    }
+
     public TypeAdapterFactory createTypeAdapterFactory() {
         return new RegistryTypeAdapterFactory<>(this);
     }
@@ -139,6 +146,22 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
         public void register(JsonRegistry<R> registry);
     }
 
+    public static interface ErrorFallback<R extends JsonRegistry.Registrable<R>> {
+
+        public JsonElement getRawJson();
+        public Throwable getCause();
+        public void setRawJson(JsonElement json);
+        public void setCause(Throwable cause);
+
+        public default void setReason(DeserializationFailedReason reason) {
+        }
+
+    }
+
+    public static enum DeserializationFailedReason {
+        MISSING_TYPE, TYPE_NOT_FOUND;
+    }
+
     private static class RegistryTypeAdapterFactory<R extends JsonRegistry.Registrable<R>> implements TypeAdapterFactory {
 
         private JsonRegistry<R> registry;
@@ -156,6 +179,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
 
             String typeFieldName = registry.typeField;
             boolean allowNull = registry.allowNull;
+            String errorFallbackId = registry.errorFallbackId;
 
             return new TypeAdapter<T>() {
 
@@ -174,7 +198,13 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
                     Class<? extends R> clazz = (Class<? extends R>) value.getClass();
                     String id = registry.getIdOf(clazz);
                     if (id == null) {
+                        // We have to throw here as we don't know how to deserialize this
                         throw new JsonParseException("Unregistered type: " + clazz.getName());
+                    } else if (id.equals(errorFallbackId)) {
+                        // Just write the raw Json back
+                        JsonElement rawJsonElement = ((ErrorFallback<R>) value).getRawJson();
+                        out.jsonValue(rawJsonElement.toString());
+                        return;
                     }
                     TypeAdapter<R> typeAdapter = (TypeAdapter<R>) registry.getTypeAdapter(id);
                     if (typeAdapter == null) {
@@ -196,6 +226,7 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
 
                     if (in.peek() == JsonToken.NULL) {
                         if (!allowNull) {
+                            // We don't use fallback here
                             throw new JsonParseException("Null value is not allowed for type: " + type.getRawType().getName());
                         }
                         in.nextNull();
@@ -205,12 +236,12 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
                     JsonObject jsonObject = gson.fromJson(in, JsonObject.class);
                     JsonElement typeElement = jsonObject.get(typeFieldName);
                     if (typeElement == null) {
-                        throw new JsonParseException("Missing type field: " + typeFieldName);
+                        return useFallback(typeFieldName, jsonObject, new JsonParseException("Missing type field: " + typeFieldName), DeserializationFailedReason.MISSING_TYPE);
                     }
                     String id = typeElement.getAsString();
                     Class<? extends R> clazz = registry.getClassOf(id);
                     if (clazz == null) {
-                        throw new JsonParseException("Unknown type id: " + id);
+                        return useFallback(typeFieldName, jsonObject, new JsonParseException("Unregistered type id: " + id), DeserializationFailedReason.TYPE_NOT_FOUND);
                     }
                     TypeAdapter<R> typeAdapter = (TypeAdapter<R>) registry.getTypeAdapter(id);
                     if (typeAdapter != null) {
@@ -218,6 +249,24 @@ public class JsonRegistry<R extends JsonRegistry.Registrable<R>> {
                     } else {
                         TypeAdapter<R> delegateAdapter = (TypeAdapter<R>) gson.getDelegateAdapter(RegistryTypeAdapterFactory.this, TypeToken.get(clazz));
                         return (T) delegateAdapter.fromJsonTree(jsonObject);
+                    }
+                }
+
+                private T useFallback(String typeFieldName, JsonObject jsonObject, JsonParseException cause, DeserializationFailedReason reason) {
+                    if (errorFallbackId == null) {
+                        throw cause;
+                    } else {
+                        // Use fallback
+                        Class<? extends R> fallbackClass = registry.getClassOf(errorFallbackId);
+                        try {
+                            ErrorFallback<? extends R> fallback = (ErrorFallback<? extends R>) fallbackClass.getConstructor().newInstance();
+                            fallback.setCause(cause);
+                            fallback.setRawJson(jsonObject);
+                            fallback.setReason(reason);
+                            return (T) fallback;
+                        } catch (Throwable t) {
+                            throw new JsonParseException("Failed to create error fallback instance of type: " + fallbackClass.getName(), t);
+                        }
                     }
                 }
 
