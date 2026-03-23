@@ -51,7 +51,7 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
             menu.addKey('-', "Back")
                 .addKey('L', "Lower Bound: " + ANSIHelper.blue(String.valueOf(pointFilter.lowerBound)), () -> {
                     menu.updateKeyDescription('L', "Lower Bound: " + ANSIHelper.bold(ANSIHelper.blue("> " + pointFilter.lowerBound + " <")));
-                    String result = new StringInput(menu.getDisplayContent()).scan(context);
+                    String result = new StringInput(menu.getDisplayContent()).allowEmpty().scan(context);
                     try {
                         int newLowerBound = Integer.parseInt(result);
                         if (newLowerBound < pointFilter.MIN || newLowerBound > pointFilter.upperBound) {
@@ -66,7 +66,7 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
                 })
                 .addKey('U', "Upper Bound: " + ANSIHelper.blue(String.valueOf(pointFilter.upperBound)), () -> {
                     menu.updateKeyDescription('U', "Upper Bound: " + ANSIHelper.bold(ANSIHelper.blue("> " + pointFilter.upperBound + " <")));
-                    String result = new StringInput(menu.getDisplayContent()).scan(context);
+                    String result = new StringInput(menu.getDisplayContent()).allowEmpty().scan(context);
                     try {
                         int newUpperBound = Integer.parseInt(result);
                         if (newUpperBound > pointFilter.MAX || newUpperBound < pointFilter.lowerBound) {

@@ -1,3 +1,5 @@
 pelemenguin.texturegen.api.builtin.ImageRecolorer$Editor
+pelemenguin.texturegen.api.builtin.FillColorProcessor$TerminalEditor
 pelemenguin.texturegen.api.builtin.StackPopper$TerminalEditor
 pelemenguin.texturegen.api.builtin.StackDuplicator$TerminalEditor
+pelemenguin.texturegen.api.builtin.StackSwapper$TerminalEditor

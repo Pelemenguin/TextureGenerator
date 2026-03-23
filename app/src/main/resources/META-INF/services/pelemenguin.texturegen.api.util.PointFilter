@@ -11,3 +11,4 @@ pelemenguin.texturegen.api.builtin.RGBAPointFilter$Red
 pelemenguin.texturegen.api.builtin.RGBAPointFilter$Green
 pelemenguin.texturegen.api.builtin.RGBAPointFilter$Blue
 pelemenguin.texturegen.api.builtin.RGBAPointFilter$Alpha
+pelemenguin.texturegen.api.builtin.MinRectPointFilter

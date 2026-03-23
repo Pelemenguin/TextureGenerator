@@ -1,5 +1,7 @@
 pelemenguin.texturegen.api.generator.Processor$ErrorProcessor
 pelemenguin.texturegen.api.builtin.ImageRecolorer
 pelemenguin.texturegen.api.builtin.ImageCloner
+pelemenguin.texturegen.api.builtin.FillColorProcessor
 pelemenguin.texturegen.api.builtin.StackPopper
 pelemenguin.texturegen.api.builtin.StackDuplicator
+pelemenguin.texturegen.api.builtin.StackSwapper

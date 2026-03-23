@@ -245,7 +245,7 @@ public class ColorPickerMenu {
                 MODE_RGBA));
     }
 
-    public void addHSVAKeys(TerminalMenu menu, PrintStream out, Scanner scanner) {
+    private void addHSVAKeys(TerminalMenu menu, PrintStream out, Scanner scanner) {
         String hueColorBar = this.hsvColorBar('H', this.hsva[0]);
         String saturationColorBar = this.hsvColorBar('S', this.hsva[1]);
         String valueColorBar = this.hsvColorBar('V', this.hsva[2]);
