@@ -93,6 +93,9 @@ public sealed abstract class RGBAPointFilter implements PointFilter
                 .addKey('L', "Lower Bound: " + ANSIHelper.blue(String.valueOf(pointFilter.lowerBound)), () -> {
                     menu.updateKeyDescription('L', "Lower Bound: " + ANSIHelper.bold(ANSIHelper.blue("> " + pointFilter.lowerBound + " <")));
                     String result = new StringInput(menu.getDisplayContent()).allowEmpty().scan(context);
+                    if (result.isBlank()) {
+                        return;
+                    }
                     try {
                         int newLowerBound = Integer.parseInt(result);
                         if (newLowerBound < pointFilter.MIN || newLowerBound > pointFilter.upperBound) {
@@ -108,6 +111,9 @@ public sealed abstract class RGBAPointFilter implements PointFilter
                 .addKey('U', "Upper Bound: " + ANSIHelper.blue(String.valueOf(pointFilter.upperBound)), () -> {
                     menu.updateKeyDescription('U', "Upper Bound: " + ANSIHelper.bold(ANSIHelper.blue("> " + pointFilter.upperBound + " <")));
                     String result = new StringInput(menu.getDisplayContent()).allowEmpty().scan(context);
+                    if (result.isBlank()) {
+                        return;
+                    }
                     try {
                         int newUpperBound = Integer.parseInt(result);
                         if (newUpperBound > pointFilter.MAX || newUpperBound < pointFilter.lowerBound) {

@@ -1,4 +1,5 @@
 import pelemenguin.texturegen.api.builtin.ImageRecolorer;
+import pelemenguin.texturegen.api.builtin.ImageSplitter;
 import pelemenguin.texturegen.api.builtin.MinRectPointFilter;
 import pelemenguin.texturegen.api.builtin.FillColorProcessor;
 import pelemenguin.texturegen.api.builtin.HSVPointFilter;
@@ -27,12 +28,14 @@ module pelemenguin.texturegen {
         Processor.ErrorProcessor,
         ImageCloner,
         ImageRecolorer,
+        ImageSplitter,
         FillColorProcessor,
         StackPopper,
         StackDuplicator;
 
     provides TerminalProcessorEditorProvider with
         ImageRecolorer.Editor,
+        ImageSplitter.TerminalEditor,
         FillColorProcessor.TerminalEditor,
         StackPopper.TerminalEditor,
         StackDuplicator.TerminalEditor;
