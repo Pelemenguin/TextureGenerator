@@ -5,6 +5,8 @@ import java.awt.image.Raster;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.gson.annotations.SerializedName;
+
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -21,7 +23,9 @@ import pelemenguin.texturegen.api.util.PointFilter;
 public class ImageSplitter implements Processor {
 
     public PointFilter filter = PointFilter.alwaysPass();
+    @SerializedName("put_image_for_passed_on_top")
     public boolean putImageForPassedOnTop = true;
+    @SerializedName("keep_passed_in_original")
     public boolean keepPassedInOriginal = true;
 
     @Override
@@ -33,8 +37,8 @@ public class ImageSplitter implements Processor {
         Raster maskRaster = maskImage.getRaster();
         for (int x = 0; x < maskImage.getWidth(); x++) {
             for (int y = 0; y < maskImage.getHeight(); y++) {
-                boolean failed = maskRaster.getSample(x, y, 0) == 0;
-                if (keepPassedInOriginal ^ failed) {
+                boolean succeeded = maskRaster.getSample(x, y, 0) > 0;
+                if (keepPassedInOriginal ^ succeeded) {
                     biProduct.setRGB(x, y, original.getRGB(x, y));
                     original.setRGB(x, y, 0);
                 }
@@ -103,6 +107,7 @@ public class ImageSplitter implements Processor {
                     break;
                 }
             }
+            setter.accept(processor);
         }
 
         @Override

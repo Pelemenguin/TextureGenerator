@@ -415,6 +415,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
                     .strigifier(PointFilter::getPointFilterTitle)
                     .description("Edit filters for And point filter:");
                 editor.loop(context);
+                setter.accept(pointFilter);
             }
 
             @Override
@@ -498,6 +499,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
                     .strigifier(PointFilter::getPointFilterTitle)
                     .description("Edit filters for Or point filter:");
                 editor.loop(context);
+                setter.accept(pointFilter);
             }
 
             @Override
@@ -587,6 +589,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
                         break;
                     }
                 }
+                setter.accept(pointFilter);
             }
 
             @Override

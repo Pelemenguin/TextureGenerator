@@ -4,7 +4,9 @@ import pelemenguin.texturegen.api.builtin.MinRectPointFilter;
 import pelemenguin.texturegen.api.builtin.FillColorProcessor;
 import pelemenguin.texturegen.api.builtin.HSVPointFilter;
 import pelemenguin.texturegen.api.builtin.ImageCloner;
+import pelemenguin.texturegen.api.builtin.ImageMerger;
 import pelemenguin.texturegen.api.builtin.RGBAPointFilter;
+import pelemenguin.texturegen.api.builtin.RandomPointFilter;
 import pelemenguin.texturegen.api.builtin.StackDuplicator;
 import pelemenguin.texturegen.api.builtin.StackPopper;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
@@ -29,6 +31,7 @@ module pelemenguin.texturegen {
         ImageCloner,
         ImageRecolorer,
         ImageSplitter,
+        ImageMerger,
         FillColorProcessor,
         StackPopper,
         StackDuplicator;
@@ -36,6 +39,7 @@ module pelemenguin.texturegen {
     provides TerminalProcessorEditorProvider with
         ImageRecolorer.Editor,
         ImageSplitter.TerminalEditor,
+        ImageMerger.TerminalEditor,
         FillColorProcessor.TerminalEditor,
         StackPopper.TerminalEditor,
         StackDuplicator.TerminalEditor;
@@ -54,7 +58,8 @@ module pelemenguin.texturegen {
         RGBAPointFilter.Green,
         RGBAPointFilter.Blue,
         RGBAPointFilter.Alpha,
-        MinRectPointFilter;
+        MinRectPointFilter,
+        RandomPointFilter;
 
     provides TerminalPointFilterEditorProvider with
         PointFilter.And.TerminalEditor,
@@ -66,7 +71,8 @@ module pelemenguin.texturegen {
         RGBAPointFilter.Red.TerminalEditor,
         RGBAPointFilter.Green.TerminalEditor,
         RGBAPointFilter.Blue.TerminalEditor,
-        RGBAPointFilter.Alpha.TerminalEditor;
+        RGBAPointFilter.Alpha.TerminalEditor,
+        RandomPointFilter.TerminalEditor;
 
     uses Processor;
 }

@@ -163,6 +163,7 @@ public sealed abstract class RGBAPointFilter implements PointFilter
                     break;
                 }
             }
+            setter.accept(pointFilter);
         }
 
     }

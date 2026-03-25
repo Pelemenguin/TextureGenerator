@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.gson.annotations.SerializedName;
+
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -17,6 +19,7 @@ import pelemenguin.texturegen.api.util.JsonRegistry;
 
 public class StackSwapper implements Processor {
 
+    @SerializedName("insert_through")
     public int insertThourgh = 1;
 
     @Override
@@ -73,7 +76,7 @@ public class StackSwapper implements Processor {
             while (true) {
                 String result = input.scan(context);
                 if (result.isBlank()) {
-                    return;
+                    break;
                 }
                 try {
                     int newSwapCount = Integer.parseInt(result);
@@ -82,11 +85,12 @@ public class StackSwapper implements Processor {
                         throw new NumberFormatException();
                     }
                     processor.insertThourgh = newSwapCount;
-                    return;
+                    break;
                 } catch (NumberFormatException e) {
                     context.outStream().println(ANSIHelper.red("Invalid input. Not a number"));
                 }
             }
+            setter.accept(processor);
         }
 
         @Override

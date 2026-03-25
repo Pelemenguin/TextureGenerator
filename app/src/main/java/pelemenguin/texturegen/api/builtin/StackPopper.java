@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.gson.annotations.SerializedName;
+
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -17,6 +19,7 @@ import pelemenguin.texturegen.api.util.JsonRegistry;
 
 public class StackPopper implements Processor {
 
+    @SerializedName("pop_count")
     public int popCount = 1;
 
     @Override
@@ -66,7 +69,7 @@ public class StackPopper implements Processor {
             while (true) {
                 String result = input.scan(context);
                 if (result.isBlank()) {
-                    return;
+                    break;
                 }
                 try {
                     int newPopCount = Integer.parseInt(result);
@@ -75,11 +78,12 @@ public class StackPopper implements Processor {
                         throw new NumberFormatException();
                     }
                     processor.popCount = newPopCount;
-                    return;
+                    break;
                 } catch (NumberFormatException e) {
                     context.outStream().println(ANSIHelper.red("Invalid input. Not a number"));
                 }
             }
+            setter.accept(processor);
         }
 
         @Override

@@ -116,6 +116,7 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
                     break;
                 }
             }
+            setter.accept(pointFilter);
         }
 
         @Override

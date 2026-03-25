@@ -107,6 +107,7 @@ public class FillColorProcessor implements Processor {
                     break;
                 }
             }
+            setter.accept(processor);
         }
 
         @Override

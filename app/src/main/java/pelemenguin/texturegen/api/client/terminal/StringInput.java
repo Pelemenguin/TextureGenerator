@@ -2,6 +2,8 @@ package pelemenguin.texturegen.api.client.terminal;
 
 import java.io.PrintStream;
 import java.util.Scanner;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class StringInput {
     
@@ -40,6 +42,21 @@ public class StringInput {
 
         ANSIHelper.clear(out);
         return null;
+    }
+
+    public String scanAndRun(TerminalMenuContext context, BiConsumer<String, Consumer<String>> action) {
+        String[] error = new String[1];
+        String result;
+        while (true) {
+            result = this.scan(context);
+            action.accept(result, errorMessage -> error[0] = errorMessage);
+            if (error[0] != null) {
+                context.outStream().println(error[0]);
+            } else {
+                return result;
+            }
+            error[0] = null;
+        }
     }
 
     public StringInput allowEmpty() {

@@ -3,6 +3,8 @@ package pelemenguin.texturegen.api.builtin;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.google.gson.annotations.SerializedName;
+
 import pelemenguin.texturegen.api.client.terminal.ANSIHelper;
 import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
@@ -16,6 +18,7 @@ import pelemenguin.texturegen.api.util.JsonRegistry;
 
 public class StackDuplicator implements Processor {
 
+    @SerializedName("duplicate_count")
     public int duplicateCount = 1;
 
     @Override
@@ -81,7 +84,7 @@ public class StackDuplicator implements Processor {
             while (true) {
                 String result = input.scan(context);
                 if (result.isBlank()) {
-                    return;
+                    break;
                 }
                 try {
                     int newDuplicateCount = Integer.parseInt(result);
@@ -90,11 +93,12 @@ public class StackDuplicator implements Processor {
                         throw new NumberFormatException();
                     }
                     processor.duplicateCount = newDuplicateCount;
-                    return;
+                    break;
                 } catch (NumberFormatException e) {
                     context.outStream().println(ANSIHelper.red("Invalid input. Not a number"));
                 }
             }
+            setter.accept(processor);
         }
 
         @Override

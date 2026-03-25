@@ -38,6 +38,10 @@ public class TerminalMenu {
         return this;
     }
 
+    public TerminalMenu addKey(Character key, Runnable action) {
+        return addKey(key, "", action);
+    }
+
     private static final Runnable EMPTY_RUNNABLE = () -> {};
     public TerminalMenu addKey(Character key, String description) {
         return addKey(key, description, EMPTY_RUNNABLE);
