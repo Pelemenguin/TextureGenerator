@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 
+import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.util.JsonRegistry;
 import pelemenguin.texturegen.api.util.PointFilter;
 
@@ -19,7 +20,7 @@ public class MinRectPointFilter implements PointFilter {
     }
 
     @Override
-    public void filter(BufferedImage image, BufferedImage maskResult) {
+    public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
         int minX = image.getWidth(), minY = image.getHeight(), maxX = 0, maxY = 0;
         Raster raster = image.getRaster();
         for (int y = 0; y < image.getHeight(); y++) {

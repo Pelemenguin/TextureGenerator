@@ -13,6 +13,7 @@ import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
+import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 import pelemenguin.texturegen.api.util.JsonRegistry;
 import pelemenguin.texturegen.api.util.PointFilter;
@@ -32,7 +33,7 @@ public class RandomPointFilter implements PointFilter {
     }
 
     @Override
-    public void filter(BufferedImage image, BufferedImage maskResult) {
+    public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
         WritableRaster raster = maskResult.getRaster();
 
         Random randomSource = new Random(getRandomSeed(image, seed));

@@ -10,6 +10,7 @@ import pelemenguin.texturegen.api.client.terminal.StringInput;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
+import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.util.ColorHelper;
 import pelemenguin.texturegen.api.util.CommonRegistry;
 import pelemenguin.texturegen.api.util.JsonRegistry;
@@ -127,7 +128,7 @@ public sealed abstract class HSVPointFilter implements PredicatePointFilter
     }
 
     @Override
-    public boolean testPoint(BufferedImage image, int x, int y) {
+    public boolean testPoint(GenerationContext context, BufferedImage image, int x, int y) {
         int[] temp = new int[3];
         int rgba = image.getRGB(x, y);
         ColorHelper.rgbToHsv(

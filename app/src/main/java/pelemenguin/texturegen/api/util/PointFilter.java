@@ -23,6 +23,7 @@ import pelemenguin.texturegen.api.client.terminal.ListEditorMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenu;
 import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
+import pelemenguin.texturegen.api.generator.GenerationContext;
 
 public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
 
@@ -56,7 +57,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
      *                   <p>
      *                   All pixels in this image are initially black (0) and should be modified to white (1) for points that pass the filter.
      */
-    void filter(BufferedImage image, BufferedImage maskResult);
+    void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult);
 
     public default String getPointFilterName() {
         return REGISTRY.getIdOf(this.getClass());
@@ -66,14 +67,14 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         return this.toString();
     }
 
-    public default BufferedImage filter(BufferedImage image) {
+    public default BufferedImage filter(GenerationContext context, BufferedImage image) {
         BufferedImage maskResult = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-        filter(image, maskResult);
+        filter(context, image, maskResult);
         return maskResult;
     }
 
-    public default Iterator<Point> pointIterator(BufferedImage image) {
-        BufferedImage maskImage = this.filter(image);
+    public default Iterator<Point> pointIterator(GenerationContext context, BufferedImage image) {
+        BufferedImage maskImage = this.filter(context, image);
         Raster raster = maskImage.getData();
         int width = maskImage.getWidth();
         int height = maskImage.getHeight();
@@ -121,8 +122,8 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         };
     }
 
-    public default void forEachPixel(BufferedImage image, Consumer<Point> action) {
-        this.pointIterator(image).forEachRemaining(action);
+    public default void forEachPixel(GenerationContext context, BufferedImage image, Consumer<Point> action) {
+        this.pointIterator(context, image).forEachRemaining(action);
     }
 
     public static AlwaysPass alwaysPass() {
@@ -188,7 +189,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
 
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             throw new IllegalStateException("Cannot filter with error point filter", cause);
         }
 
@@ -232,7 +233,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
         
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             WritableRaster raster = maskResult.getRaster();
             int width = maskResult.getWidth();
             int height = maskResult.getHeight();
@@ -244,7 +245,7 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
 
         @Override
-        public Iterator<Point> pointIterator(BufferedImage image) {
+        public Iterator<Point> pointIterator(GenerationContext context, BufferedImage image) {
             int width = image.getWidth();
             int height = image.getHeight();
             return new Iterator<Point>() {
@@ -310,12 +311,12 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
         
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             // Do nothing, all pixels are already black (0xFF000000)
         }
 
         @Override
-        public Iterator<Point> pointIterator(BufferedImage image) {
+        public Iterator<Point> pointIterator(GenerationContext context, BufferedImage image) {
             return new Iterator<Point>() {
 
                 @Override
@@ -353,15 +354,15 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
 
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             if (filters.size() == 0) {
                 // If there are no filters, pass all points
-                AlwaysPass.INSTANCE.filter(image, maskResult);
+                AlwaysPass.INSTANCE.filter(context, image, maskResult);
                 return;
             }
             Raster[] masks = new Raster[filters.size()];
             for (int i = 0; i < filters.size(); i++) {
-                BufferedImage mask = filters.get(i).filter(image);
+                BufferedImage mask = filters.get(i).filter(context, image);
                 masks[i] = mask.getData();
             }
             WritableRaster raster = maskResult.getRaster();
@@ -437,15 +438,15 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
 
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             if (filters.size() == 0) {
                 // If there are no filters, fail all points
-                AlwaysFail.INSTANCE.filter(image, maskResult);
+                AlwaysFail.INSTANCE.filter(context, image, maskResult);
                 return;
             }
             Raster[] masks = new Raster[filters.size()];
             for (int i = 0; i < filters.size(); i++) {
-                BufferedImage mask = filters.get(i).filter(image);
+                BufferedImage mask = filters.get(i).filter(context, image);
                 masks[i] = mask.getData();
             }
             WritableRaster raster = maskResult.getRaster();
@@ -521,11 +522,11 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         }
 
         @Override
-        public void filter(BufferedImage image, BufferedImage maskResult) {
+        public void filter(GenerationContext context, BufferedImage image, BufferedImage maskResult) {
             if (filter == null) {
                 throw new IllegalStateException("Filter cannot be null");
             }
-            filter.filter(image, maskResult);
+            filter.filter(context, image, maskResult);
             Raster mask = maskResult.getData();
             WritableRaster raster = maskResult.getRaster();
             int width = maskResult.getWidth();

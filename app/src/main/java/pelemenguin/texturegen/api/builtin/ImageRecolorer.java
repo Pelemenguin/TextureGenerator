@@ -51,7 +51,7 @@ public class ImageRecolorer implements Processor {
     public void process(GenerationContext context, Parameter parameters, Result result) {
         BufferedImage image = parameters.load(0, BufferedImage.class);
         // Just modify the original image
-        this.filter.forEachPixel(image, point -> {
+        this.filter.forEachPixel(context, image, point -> {
             int x = point.x();
             int y = point.y();
             int color = image.getRGB(x, y);

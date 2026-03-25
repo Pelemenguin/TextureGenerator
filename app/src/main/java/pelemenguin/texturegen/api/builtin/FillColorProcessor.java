@@ -33,7 +33,7 @@ public class FillColorProcessor implements Processor {
         BufferedImage original = parameters.load(0, BufferedImage.class);
 
         WritableRaster raster = original.getRaster();
-        BufferedImage mask = this.filter.filter(original);
+        BufferedImage mask = this.filter.filter(context, original);
         Raster maskRaster = mask.getRaster();
         for (int x = 0; x < original.getWidth(); x++) {
             for (int y = 0; y < original.getHeight(); y++) {

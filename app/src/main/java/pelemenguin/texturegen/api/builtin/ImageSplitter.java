@@ -32,7 +32,7 @@ public class ImageSplitter implements Processor {
     public void process(GenerationContext context, Parameter parameters, Result result) {
         BufferedImage original = parameters.load(0, BufferedImage.class);
         BufferedImage biProduct = new BufferedImage(original.getWidth(), original.getHeight(), original.getType());
-        BufferedImage maskImage = filter.filter(original);
+        BufferedImage maskImage = filter.filter(context, original);
 
         Raster maskRaster = maskImage.getRaster();
         for (int x = 0; x < maskImage.getWidth(); x++) {
