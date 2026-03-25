@@ -1,0 +1,7 @@
+pelemenguin.texturegen.api.util.NoiseProvider$Constant$TerminalEditor
+pelemenguin.texturegen.api.util.NoiseProvider$Add$TerminalEditor
+pelemenguin.texturegen.api.util.NoiseProvider$Multiply$TerminalEditor
+pelemenguin.texturegen.api.util.NoiseProvider$Minimum$TerminalEditor
+pelemenguin.texturegen.api.util.NoiseProvider$Maximum$TerminalEditor
+pelemenguin.texturegen.api.util.NoiseProvider$Threshold$TerminalEditor
+pelemenguin.texturegen.api.builtin.PerlinNoiseProvider$TerminalEditor

@@ -12,6 +12,7 @@ import com.google.gson.TypeAdapter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Parameter;
 import pelemenguin.texturegen.api.generator.GenerationExecutor.Result;
 import pelemenguin.texturegen.api.util.JsonRegistry;
+import pelemenguin.texturegen.api.util.NoiseProvider;
 import pelemenguin.texturegen.api.util.PointFilter;
 import pelemenguin.texturegen.api.util.JsonRegistry.DeserializationFailedReason;
 
@@ -35,6 +36,7 @@ public interface Processor extends JsonRegistry.Registrable<Processor> {
         .setFallbackId("texturegen.error");
     public static final Gson GSON = REGISTRY.createGsonBuilder()
         .registerTypeAdapterFactory(PointFilter.TYPE_ADAPTER)
+        .registerTypeAdapterFactory(NoiseProvider.TYPE_ADAPTER)
         .setPrettyPrinting()
         .create();
 

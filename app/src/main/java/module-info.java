@@ -1,6 +1,8 @@
 import pelemenguin.texturegen.api.builtin.ImageRecolorer;
 import pelemenguin.texturegen.api.builtin.ImageSplitter;
 import pelemenguin.texturegen.api.builtin.MinRectPointFilter;
+import pelemenguin.texturegen.api.builtin.NoiseRenderer;
+import pelemenguin.texturegen.api.builtin.PerlinNoiseProvider;
 import pelemenguin.texturegen.api.builtin.FillColorProcessor;
 import pelemenguin.texturegen.api.builtin.HSVPointFilter;
 import pelemenguin.texturegen.api.builtin.ImageCloner;
@@ -9,9 +11,11 @@ import pelemenguin.texturegen.api.builtin.RGBAPointFilter;
 import pelemenguin.texturegen.api.builtin.RandomPointFilter;
 import pelemenguin.texturegen.api.builtin.StackDuplicator;
 import pelemenguin.texturegen.api.builtin.StackPopper;
+import pelemenguin.texturegen.api.client.terminal.TerminalNoiseProviderEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
 import pelemenguin.texturegen.api.generator.Processor;
+import pelemenguin.texturegen.api.util.NoiseProvider;
 import pelemenguin.texturegen.api.util.PointFilter;
 
 module pelemenguin.texturegen {
@@ -32,6 +36,7 @@ module pelemenguin.texturegen {
         ImageRecolorer,
         ImageSplitter,
         ImageMerger,
+        NoiseRenderer,
         FillColorProcessor,
         StackPopper,
         StackDuplicator;
@@ -40,6 +45,7 @@ module pelemenguin.texturegen {
         ImageRecolorer.Editor,
         ImageSplitter.TerminalEditor,
         ImageMerger.TerminalEditor,
+        NoiseRenderer.TerminalEditor,
         FillColorProcessor.TerminalEditor,
         StackPopper.TerminalEditor,
         StackDuplicator.TerminalEditor;
@@ -73,6 +79,24 @@ module pelemenguin.texturegen {
         RGBAPointFilter.Blue.TerminalEditor,
         RGBAPointFilter.Alpha.TerminalEditor,
         RandomPointFilter.TerminalEditor;
+
+    provides NoiseProvider with
+        NoiseProvider.Constant,
+        NoiseProvider.Add,
+        NoiseProvider.Multiply,
+        NoiseProvider.Minimum,
+        NoiseProvider.Maximum,
+        NoiseProvider.Threshold,
+        PerlinNoiseProvider;
+
+    provides TerminalNoiseProviderEditorProvider with
+        NoiseProvider.Constant.TerminalEditor,
+        NoiseProvider.Add.TerminalEditor,
+        NoiseProvider.Multiply.TerminalEditor,
+        NoiseProvider.Minimum.TerminalEditor,
+        NoiseProvider.Maximum.TerminalEditor,
+        NoiseProvider.Threshold.TerminalEditor,
+        PerlinNoiseProvider.TerminalEditor;
 
     uses Processor;
 }

@@ -147,6 +147,7 @@ public class FieldEditorMenu<T> {
             return (value, setter) -> {
                 try {
                     String result = new StringInput("Enter new value for " + ANSIHelper.green(displayName) + " (current: " + ANSIHelper.blue(String.valueOf(originalValue)) + ")")
+                        .allowEmpty()
                         .scan(out, this.currentScanner);
                     if (!result.isBlank()) {
                         field.set(obj, result);
@@ -156,10 +157,16 @@ public class FieldEditorMenu<T> {
                 }
             };
         // Or Numbers
-        } else if (Number.class.isAssignableFrom(field.getType())) {
+        } else if (Number.class.isAssignableFrom(field.getType())
+            || field.getType() == int.class
+            || field.getType() == long.class
+            || field.getType() == float.class
+            || field.getType() == double.class
+        ) {
             return (value, setter) -> {
                 try {
                     String result = new StringInput("Enter new value for " + ANSIHelper.green(displayName) + " (current: " + ANSIHelper.blue(String.valueOf(originalValue)) + ")")
+                        .allowEmpty()
                         .scan(out, this.currentScanner);
                     if (!result.isBlank()) {
                         Number numberValue = null;

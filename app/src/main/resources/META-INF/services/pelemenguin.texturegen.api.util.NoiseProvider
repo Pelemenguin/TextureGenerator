@@ -1,0 +1,7 @@
+pelemenguin.texturegen.api.util.NoiseProvider$Constant
+pelemenguin.texturegen.api.util.NoiseProvider$Add
+pelemenguin.texturegen.api.util.NoiseProvider$Multiply
+pelemenguin.texturegen.api.util.NoiseProvider$Minimum
+pelemenguin.texturegen.api.util.NoiseProvider$Maximum
+pelemenguin.texturegen.api.util.NoiseProvider$Threshold
+pelemenguin.texturegen.api.builtin.PerlinNoiseProvider

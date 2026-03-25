@@ -53,7 +53,7 @@ public class GeneratorInfoMenu {
                     }
                 })
                 .addKey('S', "Suffix", () -> {
-                    String result =  new StringInput("Enter suffix: (leave empty to caccel)")
+                    String result =  new StringInput("Enter suffix: (leave empty to cancel)")
                         .allowEmpty()
                         .scan(context);
                     if (!result.isBlank()) {

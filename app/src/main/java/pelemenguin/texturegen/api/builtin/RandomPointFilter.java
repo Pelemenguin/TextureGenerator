@@ -2,7 +2,6 @@ package pelemenguin.texturegen.api.builtin;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -15,6 +14,7 @@ import pelemenguin.texturegen.api.client.terminal.TerminalMenuContext;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
 import pelemenguin.texturegen.api.generator.GenerationContext;
 import pelemenguin.texturegen.api.util.CommonRegistry;
+import pelemenguin.texturegen.api.util.ImageUtils;
 import pelemenguin.texturegen.api.util.JsonRegistry;
 import pelemenguin.texturegen.api.util.PointFilter;
 
@@ -47,8 +47,7 @@ public class RandomPointFilter implements PointFilter {
     }
 
     public static long getRandomSeed(BufferedImage image, long userSelectedSeed) {
-        int[] pixels = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
-        long seedFromImage = (long) Arrays.hashCode(pixels) & 0xFFFFFFFFL;
+        long seedFromImage = (long) ImageUtils.hashCode(image) & 0xFFFFFFFFL;
         return userSelectedSeed * 31L + seedFromImage;
     }
 
