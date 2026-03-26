@@ -1,6 +1,7 @@
 import pelemenguin.texturegen.api.builtin.ImageRecolorer;
 import pelemenguin.texturegen.api.builtin.ImageSplitter;
 import pelemenguin.texturegen.api.builtin.MinRectPointFilter;
+import pelemenguin.texturegen.api.builtin.NoisePointFilter;
 import pelemenguin.texturegen.api.builtin.NoiseRenderer;
 import pelemenguin.texturegen.api.builtin.PerlinNoiseProvider;
 import pelemenguin.texturegen.api.builtin.FillColorProcessor;
@@ -65,7 +66,8 @@ module pelemenguin.texturegen {
         RGBAPointFilter.Blue,
         RGBAPointFilter.Alpha,
         MinRectPointFilter,
-        RandomPointFilter;
+        RandomPointFilter,
+        NoisePointFilter;
 
     provides TerminalPointFilterEditorProvider with
         PointFilter.And.TerminalEditor,
@@ -78,7 +80,8 @@ module pelemenguin.texturegen {
         RGBAPointFilter.Green.TerminalEditor,
         RGBAPointFilter.Blue.TerminalEditor,
         RGBAPointFilter.Alpha.TerminalEditor,
-        RandomPointFilter.TerminalEditor;
+        RandomPointFilter.TerminalEditor,
+        NoisePointFilter.TerminalEditor;
 
     provides NoiseProvider with
         NoiseProvider.Constant,

@@ -9,3 +9,4 @@ pelemenguin.texturegen.api.builtin.RGBAPointFilter$Green$TerminalEditor
 pelemenguin.texturegen.api.builtin.RGBAPointFilter$Blue$TerminalEditor
 pelemenguin.texturegen.api.builtin.RGBAPointFilter$Alpha$TerminalEditor
 pelemenguin.texturegen.api.builtin.RandomPointFilter$TerminalEditor
+pelemenguin.texturegen.api.builtin.NoisePointFilter$TerminalEditor
