@@ -67,6 +67,9 @@ public interface PointFilter extends JsonRegistry.Registrable<PointFilter> {
         return this.toString();
     }
 
+    public default void pointFilterInit() {}
+    public default void pointFilterFinalize() {}
+
     public default BufferedImage filter(GenerationContext context, BufferedImage image) {
         BufferedImage maskResult = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
         filter(context, image, maskResult);

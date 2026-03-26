@@ -48,6 +48,16 @@ public class NoisePointFilter implements PointFilter {
         return "Noise Filter (" + this.noise.getNoiseProviderTitle() + ")";
     }
 
+    @Override
+    public void pointFilterInit() {
+        this.noise.noiseProviderInit();
+    }
+
+    @Override
+    public void pointFilterFinalize() {
+        this.noise.noiseProviderFinalize();
+    }
+
     public static class TerminalEditor implements TerminalPointFilterEditorProvider, TerminalPointFilterEditorProvider.Editor<NoisePointFilter> {
 
         @Override

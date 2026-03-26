@@ -237,6 +237,16 @@ public class ImageRecolorer implements Processor {
         registry.register("texturegen.image.recolorer", ImageRecolorer.class, new Adapter());
     }
 
+    @Override
+    public void processorInit() {
+        this.filter.pointFilterInit();
+    }
+
+    @Override
+    public void processorFinalize() {
+        this.filter.pointFilterFinalize();
+    }
+
     public static class Adapter extends TypeAdapter<ImageRecolorer> {
 
         @Override

@@ -79,6 +79,16 @@ public class ImageSplitter implements Processor {
         return "Split Image by " + filter.getPointFilterTitle();
     }
 
+    @Override
+    public void processorInit() {
+        this.filter.pointFilterInit();
+    }
+
+    @Override
+    public void processorFinalize() {
+        this.filter.pointFilterFinalize();
+    }
+
     public static class TerminalEditor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<ImageSplitter> {
 
         @Override

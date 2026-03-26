@@ -76,6 +76,16 @@ public class NoiseRenderer implements Processor {
         return "Noise Renderer (" + this.valueForBlack + " -> " + this.valueForWhite + ")";
     }
 
+    @Override
+    public void processorInit() {
+        this.noise.noiseProviderInit();
+    }
+
+    @Override
+    public void processorFinalize() {
+        this.noise.noiseProviderFinalize();
+    }
+
     public static class TerminalEditor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<NoiseRenderer> {
 
         @Override

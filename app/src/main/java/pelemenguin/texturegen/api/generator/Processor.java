@@ -140,6 +140,15 @@ public interface Processor extends JsonRegistry.Registrable<Processor> {
         return this.toString();
     }
 
+    /**
+     * Called by {@link GenerationExecutor} to initialize the processor before processing.
+     */
+    public default void processorInit() {}
+    /**
+     * Called by {@link GenerationExecutor} to finalize the processor after processing.
+     */
+    public default void processorFinalize() {}
+
     public static class ErrorProcessor implements Processor, JsonRegistry.ErrorFallback<Processor> {
 
         private Throwable cause;

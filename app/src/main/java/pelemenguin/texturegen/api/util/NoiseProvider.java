@@ -45,6 +45,9 @@ public interface NoiseProvider extends JsonRegistry.Registrable<NoiseProvider> {
         return this.toString();
     }
 
+    public default void noiseProviderInit() {}
+    public default void noiseProviderFinalize() {}
+
     public static Constant constant(float value) {
         Constant res = new Constant();
         res.value = value;

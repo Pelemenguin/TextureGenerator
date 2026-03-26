@@ -50,11 +50,34 @@ public class GenerationExecutor {
 
         int totalImages = textureInfos.size();
 
+        // Initialization
+        for (Processor processor : processors) {
+            try {
+                processor.processorInit();
+            } catch (Throwable t) {
+                if (out != null) {
+                    out.println(ANSIHelper.blue("Processor initialization failed!"));
+                }
+                exceptions.add(new GenerationError(null, new GeneratorException("Initialization failed for processor " + processor + ": " + t.getMessage(), t)));
+                return new ExecutionResult(
+                    totalImages,
+                    0,
+                    0,
+                    0,
+                    totalImages,
+                    exceptions
+                );
+            }
+        }
+
         // Type check
         try {
             typeCheck(processors);
         } catch (Throwable t) {
             exceptions.add(new GenerationError(null, new GeneratorException("Processor type check failed: " + t.getMessage(), t)));
+            if (out != null) {
+                out.println(ANSIHelper.red("Type check failed!"));
+            }
             return new ExecutionResult(
                 totalImages,
                 0,
@@ -181,6 +204,16 @@ public class GenerationExecutor {
             });
         }
 
+        boolean hasFinializationExceptions = false;
+        for (Processor processor : processors) {
+            try {
+                processor.processorFinalize();
+            } catch (Throwable t) {
+                exceptions.add(new GenerationError(null, new GeneratorException("Finalization failed for processor " + processor, t)));
+                hasFinializationExceptions = true;
+            }
+        }
+
         try {
             service.shutdown();
             service.awaitTermination(1, TimeUnit.HOURS);
@@ -203,6 +236,11 @@ public class GenerationExecutor {
             out.println("Failed    | " + ANSIHelper.red(String.valueOf(failedImages)));
             out.println("Unfound   | " + ANSIHelper.yellow(String.valueOf(unfoundImages)));
             out.println("Skipped   | " + ANSIHelper.blue(String.valueOf(skippedImages)));
+
+            if (hasFinializationExceptions) {
+                out.println();
+                out.println(ANSIHelper.yellow("WARNING: There were exceptions thrown during processor finalization!"));
+            }
         }
 
         return new ExecutionResult(
@@ -422,6 +460,11 @@ public class GenerationExecutor {
             for (Class<?> outputType : outputTypes) {
                 types.addFirst(outputType);
             }
+        }
+
+        // Finally, there should be exactly one BufferedImage on the stack
+        if (types.size() != 1 || !BufferedImage.class.isAssignableFrom(types.peekFirst())) {
+            throw new IllegalStateException("Expected exactly one output of type BufferedImage after processing, but got " + types);
         }
     }
 

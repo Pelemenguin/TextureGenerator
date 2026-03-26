@@ -53,6 +53,11 @@ public class PerlinNoiseProvider implements NoiseProvider {
         return "Perlin Noise (" + this.octaves.size() + " octaves)";
     }
 
+    @Override
+    public void noiseProviderFinalize() {
+        this.cachedPerlinNoises.clear();
+    }
+
     public static class TerminalEditor implements TerminalNoiseProviderEditorProvider, TerminalNoiseProviderEditorProvider.Editor<PerlinNoiseProvider> {
 
         @Override

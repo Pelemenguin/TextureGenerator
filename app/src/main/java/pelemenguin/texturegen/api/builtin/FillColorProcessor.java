@@ -67,6 +67,16 @@ public class FillColorProcessor implements Processor {
     }
 
     @Override
+    public void processorInit() {
+        this.filter.pointFilterInit();
+    }
+
+    @Override
+    public void processorFinalize() {
+        this.filter.pointFilterFinalize();
+    }
+
+    @Override
     public String getProcessorName() {
         return "Fill Color";
     }
