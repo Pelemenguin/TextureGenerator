@@ -168,7 +168,9 @@ public class GenerationExecutor {
                 GenerationContext context = new GenerationContext(
                     path,
                     fallbackPath,
-                    fallbackUsed
+                    fallbackUsed,
+                    assetsFolder,
+                    outputFolder
                 );
 
                 File resultFile = null;
@@ -253,7 +255,7 @@ public class GenerationExecutor {
         );
     }
 
-    private static BufferedImage toARGB(BufferedImage image) {
+    public static BufferedImage toARGB(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
 

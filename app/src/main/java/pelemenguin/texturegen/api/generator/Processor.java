@@ -1,5 +1,6 @@
 package pelemenguin.texturegen.api.generator;
 
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import pelemenguin.texturegen.api.util.JsonRegistry;
 import pelemenguin.texturegen.api.util.NoiseProvider;
 import pelemenguin.texturegen.api.util.PointFilter;
 import pelemenguin.texturegen.api.util.JsonRegistry.DeserializationFailedReason;
+import pelemenguin.texturegen.util.PathTypeAdapter;
 
 /**
  * {@code Processor}s are used in texture generation.
@@ -37,6 +39,7 @@ public interface Processor extends JsonRegistry.Registrable<Processor> {
     public static final Gson GSON = REGISTRY.createGsonBuilder()
         .registerTypeAdapterFactory(PointFilter.TYPE_ADAPTER)
         .registerTypeAdapterFactory(NoiseProvider.TYPE_ADAPTER)
+        .registerTypeHierarchyAdapter(Path.class, new PathTypeAdapter())
         .setPrettyPrinting()
         .create();
 

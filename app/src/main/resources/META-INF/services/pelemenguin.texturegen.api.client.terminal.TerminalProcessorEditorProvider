@@ -2,6 +2,7 @@ pelemenguin.texturegen.api.builtin.ImageRecolorer$Editor
 pelemenguin.texturegen.api.builtin.ImageSplitter$TerminalEditor
 pelemenguin.texturegen.api.builtin.ImageMerger$TerminalEditor
 pelemenguin.texturegen.api.builtin.NoiseRenderer$TerminalEditor
+pelemenguin.texturegen.api.builtin.ImageLoader$TerminalEditor
 pelemenguin.texturegen.api.builtin.FillColorProcessor$TerminalEditor
 pelemenguin.texturegen.api.builtin.StackPopper$TerminalEditor
 pelemenguin.texturegen.api.builtin.StackDuplicator$TerminalEditor

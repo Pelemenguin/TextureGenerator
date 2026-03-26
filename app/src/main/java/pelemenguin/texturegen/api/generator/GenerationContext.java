@@ -5,6 +5,8 @@ import java.nio.file.Path;
 public record GenerationContext(
     Path rawPath,
     Path suffixedPath,
-    String fallbackUsed
+    String fallbackUsed,
+    Path assetsRootFolder,
+    Path outputsRootFolder
 ) {
 }
