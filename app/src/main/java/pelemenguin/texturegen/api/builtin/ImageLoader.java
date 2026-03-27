@@ -44,6 +44,16 @@ public class ImageLoader implements Processor {
         return List.of(BufferedImage.class);
     }
 
+    @Override
+    public String getProcessorName() {
+        return "Image Loader";
+    }
+
+    @Override
+    public String getProcessorTitle() {
+        return "Image Loader (" + this.path + ")";
+    }
+
     public static class TerminalEditor implements TerminalProcessorEditorProvider, TerminalProcessorEditorProvider.Editor<ImageLoader> {
 
         @Override
