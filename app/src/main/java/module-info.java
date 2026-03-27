@@ -13,6 +13,7 @@ import pelemenguin.texturegen.api.builtin.RandomPointFilter;
 import pelemenguin.texturegen.api.builtin.StackDuplicator;
 import pelemenguin.texturegen.api.builtin.StackPopper;
 import pelemenguin.texturegen.api.builtin.TextureApplier;
+import pelemenguin.texturegen.api.builtin.VariableStorer;
 import pelemenguin.texturegen.api.client.terminal.TerminalNoiseProviderEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalPointFilterEditorProvider;
 import pelemenguin.texturegen.api.client.terminal.TerminalProcessorEditorProvider;
@@ -42,7 +43,8 @@ module pelemenguin.texturegen {
         NoiseRenderer,
         FillColorProcessor,
         StackPopper,
-        StackDuplicator;
+        StackDuplicator,
+        VariableStorer;
 
     provides TerminalProcessorEditorProvider with
         ImageRecolorer.Editor,
@@ -52,7 +54,8 @@ module pelemenguin.texturegen {
         NoiseRenderer.TerminalEditor,
         FillColorProcessor.TerminalEditor,
         StackPopper.TerminalEditor,
-        StackDuplicator.TerminalEditor;
+        StackDuplicator.TerminalEditor,
+        VariableStorer.TerminalEditor;
 
     provides PointFilter with
         PointFilter.ErrorPointFilter,

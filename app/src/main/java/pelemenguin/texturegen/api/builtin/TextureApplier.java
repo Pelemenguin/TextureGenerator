@@ -28,6 +28,8 @@ public class TextureApplier implements Processor {
         BufferedImage grayImage = parameters.load(0, BufferedImage.class);
         BufferedImage textureImage = parameters.load(1, BufferedImage.class);
 
+        int texWidth = textureImage.getWidth();
+        int texHeight = textureImage.getHeight();
         int[] temp = new int[3];
         for (int x = 0; x < grayImage.getWidth(); x++) {
             for (int y = 0; y < grayImage.getHeight(); y++) {
@@ -35,7 +37,7 @@ public class TextureApplier implements Processor {
                 int alpha = grayColor & 0xFF000000;
                 int gray = ColorHelper.getGrayOrN1(grayColor);
                 if (gray == -1) continue;
-                ColorHelper.rgbToHsv(textureImage.getRGB(x, y), temp);
+                ColorHelper.rgbToHsv(textureImage.getRGB(x % texWidth, y % texHeight), temp);
                 temp[2] = (int) (temp[2] * (gray / 255.0) * extraMultiplier);
                 grayImage.setRGB(x, y, alpha | (ColorHelper.hsvToRgb(temp[0], temp[1], temp[2])));
             }

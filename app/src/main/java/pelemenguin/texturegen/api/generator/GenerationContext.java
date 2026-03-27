@@ -7,6 +7,7 @@ public record GenerationContext(
     Path suffixedPath,
     String fallbackUsed,
     Path assetsRootFolder,
-    Path outputsRootFolder
+    Path outputsRootFolder,
+    GenerationExecutor.Variable variables
 ) {
 }

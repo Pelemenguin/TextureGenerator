@@ -10,3 +10,4 @@ pelemenguin.texturegen.api.builtin.FillColorProcessor
 pelemenguin.texturegen.api.builtin.StackPopper
 pelemenguin.texturegen.api.builtin.StackDuplicator
 pelemenguin.texturegen.api.builtin.StackSwapper
+pelemenguin.texturegen.api.builtin.VariableStorer

@@ -13,6 +13,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -170,7 +171,8 @@ public class GenerationExecutor {
                     fallbackPath,
                     fallbackUsed,
                     assetsFolder,
-                    outputFolder
+                    outputFolder,
+                    new Variable()
                 );
 
                 File resultFile = null;
@@ -497,6 +499,23 @@ public class GenerationExecutor {
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Result at index " + index + " is not of type " + types[index].getName());
             }
+        }
+    }
+
+    public static class Variable {
+        private HashMap<String, Object> variables = new HashMap<>();
+
+        @SuppressWarnings("unchecked")
+        public <T> T load(String variableName, Class<T> type) {
+            try {
+                return (T) variables.get(variableName);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Variable of name " + variableName + " is not of type " + type);
+            }
+        }
+
+        public void store(String variableName, Object object) {
+            variables.put(variableName, object);
         }
     }
 
