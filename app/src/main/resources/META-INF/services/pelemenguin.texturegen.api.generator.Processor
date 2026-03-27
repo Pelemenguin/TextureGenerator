@@ -4,6 +4,7 @@ pelemenguin.texturegen.api.builtin.ImageCloner
 pelemenguin.texturegen.api.builtin.ImageSplitter
 pelemenguin.texturegen.api.builtin.ImageMerger
 pelemenguin.texturegen.api.builtin.ImageLoader
+pelemenguin.texturegen.api.builtin.TextureApplier
 pelemenguin.texturegen.api.builtin.NoiseRenderer
 pelemenguin.texturegen.api.builtin.FillColorProcessor
 pelemenguin.texturegen.api.builtin.StackPopper

@@ -10,7 +10,6 @@ public class ColorHelper {
         int r, g, b;
 
         if (saturation == 0) {
-            // 灰色
             r = g = b = (int) Math.round(value * 255);
         } else {
             double hi = Math.floor(hue * 6);
@@ -62,6 +61,13 @@ public class ColorHelper {
         return (r << 16) | (g << 8) | b;
     }
 
+    public static int[] rgbToHsv(int rgb, int[] result) {
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+        return rgbToHsv(r, g, b, result);
+    }
+
     public static int[] rgbToHsv(int r, int g, int b, int[] result) {
         if (result == null) {
             result = new int[3];
@@ -106,6 +112,18 @@ public class ColorHelper {
         result[1] = sInt;
         result[2] = vInt;
         return result;
+    }
+
+    public static int getGrayOrN1(int rgb) {
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+
+        if (r == g && g == b) {
+            return r;
+        } else {
+            return -1;
+        }
     }
 
 }
